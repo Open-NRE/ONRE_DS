@@ -3,7 +3,6 @@
  */
 package edu.iitd.cse.open_nre.onre_ds.helper;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -91,8 +90,8 @@ public class Onre_dsHelper {
 	}
 	
 	public static String[] tokenize(String str) throws InvalidFormatException, IOException {
-		InputStream modelIn = new FileInputStream("lib/en-token.bin");
-		//InputStream modelIn = Onre_dsHelper.class.getResourceAsStream("lib/en-token.bin");//TODO: check why not working
+		//InputStream modelIn = new FileInputStream("lib/en-token.bin");
+		InputStream modelIn = Onre_dsHelper.class.getResourceAsStream("en-token.bin");
 		TokenizerModel model = new TokenizerModel(modelIn);
 		Tokenizer tokenizer = new TokenizerME(model);
 		return tokenizer.tokenize(str);
