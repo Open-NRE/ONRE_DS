@@ -4,7 +4,6 @@
 package edu.iitd.cse.open_nre.onre_ds.helper;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -15,6 +14,7 @@ import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.InvalidFormatException;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternNode;
+import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre_ds.domain.Onre_dsFact;
 
 
@@ -55,7 +55,7 @@ public class Onre_dsHelper {
     }*/
 	
 	public static List<Onre_dsFact> readFacts(String filePath_seedfacts) throws IOException {
-		List<String> seedfacts = Onre_dsIO.readFile(filePath_seedfacts);
+		List<String> seedfacts = OnreIO.readFile(filePath_seedfacts);
 		
 		List<Onre_dsFact> facts = new ArrayList<>();
 		for (String seedfact : seedfacts) {

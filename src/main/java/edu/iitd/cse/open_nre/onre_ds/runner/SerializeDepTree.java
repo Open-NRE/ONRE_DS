@@ -12,16 +12,12 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import opennlp.tools.util.InvalidFormatException;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import edu.iitd.cse.open_nre.onre.domain.OnrePatternTree;
-import edu.iitd.cse.open_nre.onre.helper.OnreHelper_graph;
-import edu.iitd.cse.open_nre.onre.runner.Onre_runMe;
+import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
+import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
+import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
+import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
-import edu.knowitall.tool.parse.graph.DependencyGraph;
 
 /**
  * @author harinder
@@ -34,13 +30,16 @@ public class SerializeDepTree {
 	 * @throws ClassNotFoundException 
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		String filePath_inputSentences = "data/temp";
-		String filePath_stopWords = "data/stopwords.txt";
+		String filePath_inputSentences = "/home/harinder/Documents/IITD_MTP/numericSentencesKiKhoj/CluewebSeUmeed/0004wb/0004wb-18.sentences_filtered";
+		/*String filePath_stopWords = "data/stopwords.txt";
 		String filePath_jsonDepTrees = "data/jsonDepTrees";
-		String filePath_invertedIndex = "data/invertedIndex";
+		String filePath_invertedIndex = "data/invertedIndex";*/
+		//String filePath_inputSentences = args[0];
 		
-		List<String> lines = Onre_dsIO.readFile(filePath_inputSentences);
-		List<String> stopWords = Onre_dsIO.readFile(filePath_stopWords);
+		System.out.println("Starting with file: " + filePath_inputSentences);
+		
+		List<String> lines = OnreIO.readFile(filePath_inputSentences);
+		List<String> stopWords = OnreIO.readFile(OnreFilePaths.filePath_stopWords);
 		
 		List<String> jsonStrings = new ArrayList<String>();
 		Map<String, Set<Integer>> invertedIndex = new HashMap<>();
@@ -51,14 +50,16 @@ public class SerializeDepTree {
 			String line = lines.get(i);
 			
 			helper_invertedIndex(stopWords, invertedIndex, i, line);
-			jsonStrings.add(getJsonString(line));
+			String jsonString = OnreHelper_json.getJsonString(line); 
+			//if(jsonString!=null) 
+				jsonStrings.add(jsonString);
 
 			//onrePatternNode = gson.fromJson(jsonString, OnrePatternNode.class);
 			//System.out.println();
 		}
 		
-		Onre_dsIO.writeObjectToFile(filePath_invertedIndex, invertedIndex);
-		Onre_dsIO.writeFile(filePath_jsonDepTrees, jsonStrings);
+		Onre_dsIO.writeObjectToFile(filePath_inputSentences+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);
+		OnreIO.writeFile(filePath_inputSentences+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);
 		
 		//invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_invertedIndex); 
 		//System.out.println();
@@ -79,16 +80,6 @@ public class SerializeDepTree {
 			indexValue.add(i);
 			invertedIndex.put(word, indexValue);
 		}
-	}
-
-	private static String getJsonString(String line) {
-		
-		DependencyGraph depGraph = Onre_runMe.getDepGraph(line);
-		DependencyGraph simplifiedGraph = OnreHelper_graph.simplifyGraph(depGraph);
-		OnrePatternTree onrePatternTree = OnreHelper_graph.convertGraph2PatternTree(simplifiedGraph);
-		Gson gson = new GsonBuilder().create();
-		String jsonString = gson.toJson(onrePatternTree);
-		return jsonString;
 	}
 
 }

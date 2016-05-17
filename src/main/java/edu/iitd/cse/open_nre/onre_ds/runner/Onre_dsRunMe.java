@@ -4,6 +4,7 @@
 package edu.iitd.cse.open_nre.onre_ds.runner;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,12 +12,13 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
+import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
 import edu.iitd.cse.open_nre.onre.constants.OnreExtractionPartType;
+import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternNode;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternTree;
+import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
+import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre_ds.domain.Onre_dsFact;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
@@ -34,54 +36,31 @@ public class Onre_dsRunMe {
 	 */
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
-		System.out.println("I am running");
+		//System.out.println("I am running");
 		//System.out.println(Onre_dsHelper.extractSIUnit("indian rupee"));
-		String filePath_invertedIndex = "data/invertedIndex";
-		String filePath_stopWords = "data/stopwords.txt";
-		String filePath_seedfacts = "data/seedfacts.txt";
-		String filePath_jsonDepTrees = "data/jsonDepTrees";
-		String filePath_learnedDepPatterns = "data/learnedDepPatterns";
+		String filePath_input = "";
+		List<String> stopWords = OnreIO.readFile(OnreFilePaths.filePath_stopWords);
 		
-		List<String> stopWords = Onre_dsIO.readFile(filePath_stopWords);
-		List<String> jsonDepTrees = Onre_dsIO.readFile(filePath_jsonDepTrees);
+		List<String> jsonDepTrees = OnreIO.readFile(filePath_input+OnreConstants.SUFFIX_JSON_STRINGS);
 		
-		Map<String, Set<Integer>> invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_invertedIndex);
+		Map<String, Set<Integer>> invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_input+OnreConstants.SUFFIX_INVERTED_INDEX);
 		
-		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(filePath_seedfacts);
+		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(filePath_input+OnreConstants.SUFFIX_SEED_FACTS);
 		
 		List<String> patterns = new ArrayList<>();
 		for (Onre_dsFact fact : facts) {
 			Set<Integer> intersection = getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords);
 			for (Integer id : intersection) {
 				String jsonDepTree = jsonDepTrees.get(id);
-				OnrePatternTree onrePatternTree = getOnrePatternTree(jsonDepTree);
-				patterns.add(makePattern(onrePatternTree, fact));
+				//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
+				OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
+				String pattern = makePattern(onrePatternTree, fact);
+				if(pattern != null) patterns.add(pattern);
 			}
 		}
 		
-		Onre_dsIO.writeFile(filePath_learnedDepPatterns, patterns);
+		OnreIO.writeFile(filePath_input+OnreConstants.SUFFIX_LEARNED_DEP_PATTERNS, patterns);
 		System.out.println("----Done----");
-	}
-
-	private static OnrePatternTree getOnrePatternTree(String jsonDepTree) {
-		Gson gson = new GsonBuilder().create();
-		OnrePatternTree onrePatternTree = gson.fromJson(jsonDepTree, OnrePatternTree.class);
-		
-		OnrePatternNode root = onrePatternTree.root;
-		
-		Queue<OnrePatternNode> myQ = new LinkedList<>();
-		myQ.add(root);
-		
-		while(!myQ.isEmpty()) {
-			OnrePatternNode currNode = myQ.remove();
-			
-			for(OnrePatternNode child : currNode.children) {
-				child.parent = currNode;
-				myQ.add(child);
-			}
-		}
-		
-		return onrePatternTree;
 	}
 
 	private static Set<Integer> getSentenceIdsWithMentionedFact(
@@ -106,11 +85,35 @@ public class Onre_dsRunMe {
 		return intersection;
 	}
 	
+	private static boolean quantityAndUnitSelection(OnrePatternNode qValueNode, OnrePatternNode qUnitNode) {
+		List<OnrePatternNode> ancestors_qValue = getAncestors(qValueNode);
+		List<OnrePatternNode> ancestors_qUnit = getAncestors(qUnitNode);
+		OnrePatternNode intersectionNode = getIntersectionNode(ancestors_qValue, ancestors_qUnit);
+		if(intersectionNode == null) return false; //no intersection node - invalid scenario
+		
+		int distance = 0;
+		distance += getDistanceBetweenNodes(intersectionNode, qValueNode);
+		distance += getDistanceBetweenNodes(intersectionNode, qUnitNode);
+		
+		if(distance > OnreConstants.MAX_DISTANCE_QUANTITY_UNIT) return false; //quantity and unit are far away - ignoring pattern
+		
+		OnrePatternNode nodeToBeUnvisited;
+		//the node with more ancestors will be at lower level and thus shall be unvisited
+		if(ancestors_qUnit.size()>ancestors_qValue.size()) nodeToBeUnvisited = qUnitNode;
+		else nodeToBeUnvisited = qValueNode;
+		markUnvisited(nodeToBeUnvisited);
+		
+		return true;
+	}
+	
 	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
+		if(onrePatternTree == null) return null;
 		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.words[0], OnreExtractionPartType.ARGUMENT);
 		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.words[1], OnreExtractionPartType.RELATION);
 		OnrePatternNode qValueNode = searchNode_markVisited(onrePatternTree, fact.words[2], OnreExtractionPartType.QUANTITY);
 		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.words[3], OnreExtractionPartType.QUANTITY);
+		
+		if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
 		
 		argNode.word = "{arg}";
 		relNode.word = "{rel}";
@@ -193,12 +196,63 @@ public class Onre_dsRunMe {
 		return null;
 	}
 	
+	private static void markUnvisited(OnrePatternNode node) {
+		OnrePatternNode temp = node;
+		while(temp!=null) {
+			temp.visitedCount--;
+			temp = temp.parent;
+		}
+	}
+	
 	private static void markVisited(OnrePatternNode node) {
 		OnrePatternNode temp = node;
-		while(temp !=null) {
+		while(temp!=null) {
 			temp.visitedCount++;
 			temp = temp.parent;
 		}
+	}
+	
+	private static int getDistanceBetweenNodes(OnrePatternNode higherLevelNode, OnrePatternNode lowerLevelNode) {
+		int distance = 0;
+		
+		OnrePatternNode temp = lowerLevelNode;
+		while(temp != higherLevelNode) {
+			distance++; 
+			if(temp==null) return Integer.MAX_VALUE; 
+			temp=temp.parent;
+		}
+		
+		return distance;
+	}
+	
+	private static OnrePatternNode getIntersectionNode(List<OnrePatternNode> ancestors_qValue, List<OnrePatternNode> ancestors_qUnit) {
+		int cntr = 0; 
+		OnrePatternNode ancestor_qValue_temp = ancestors_qValue.get(cntr);
+		OnrePatternNode ancestor_qUnit_temp = ancestors_qUnit.get(cntr);
+		
+		if(ancestor_qUnit_temp!=ancestor_qValue_temp) return null;
+		
+		OnrePatternNode currentIntersectionNode = null;
+		while(ancestor_qUnit_temp == ancestor_qValue_temp && cntr<ancestors_qValue.size() && cntr<ancestors_qUnit.size()) {
+			++cntr;
+			currentIntersectionNode = ancestor_qUnit_temp;
+			ancestor_qValue_temp = ancestors_qValue.get(cntr);
+			ancestor_qUnit_temp = ancestors_qUnit.get(cntr);
+		}
+		
+		return currentIntersectionNode;
+	}
+	
+	private static List<OnrePatternNode> getAncestors(OnrePatternNode node) {
+		List<OnrePatternNode> ancestors = new ArrayList<>();
+		OnrePatternNode temp = node;
+		while(temp !=null) {
+			ancestors.add(temp);
+			temp = temp.parent;
+		}
+		
+		Collections.reverse(ancestors);
+		return ancestors;
 	}
 	
 	private static OnrePatternNode searchNode_markVisited(OnrePatternTree onrePatternTree, String word, OnreExtractionPartType partType) {
@@ -218,7 +272,7 @@ public class Onre_dsRunMe {
 		
 		while(!myQ.isEmpty()) {
 			OnrePatternNode currNode = myQ.remove();
-			if(currNode.visitedCount == 4) LCA = currNode;
+			if(currNode.visitedCount == 3) LCA = currNode;
 			
 			List<OnrePatternNode> children = currNode.children;
 			for (OnrePatternNode child : children) {
