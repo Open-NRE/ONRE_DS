@@ -41,21 +41,21 @@ public class SerializeDepTree_folder {
 		
 		File folder = new File(args[0]);
 		
-		List<String> files = new ArrayList<>();
+		Set<String> files = new TreeSet<>();
 		OnreUtils.listFilesForFolder(folder, files);
 		
+		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
 		for (String file : files) {
 			System.out.println("Starting with file: " + file);
 			
 			List<String> lines = OnreIO.readFile(file);
-			List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
 			
 			List<String> jsonStrings = new ArrayList<String>();
 			Map<String, Set<Integer>> invertedIndex = new HashMap<>();
 			
 			for (int i=0; i<lines.size(); i++) {
 	
-				System.out.println("::" + (i+1));
+				if(i%100==0) System.out.println("::" + i);
 				String line = lines.get(i);
 				
 				helper_invertedIndex(stopWords, invertedIndex, i, line);

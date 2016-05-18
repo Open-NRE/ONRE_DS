@@ -39,14 +39,14 @@ public class SerializeDepTree_file {
 		System.out.println("Starting with file: " + filePath_inputSentences);
 		
 		List<String> lines = OnreIO.readFile(filePath_inputSentences);
-		List<String> stopWords = OnreIO.readFile(OnreFilePaths.filePath_stopWords);
+		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
 		
 		List<String> jsonStrings = new ArrayList<String>();
 		Map<String, Set<Integer>> invertedIndex = new HashMap<>();
 		
 		for (int i=0; i<lines.size(); i++) {
 
-			System.out.println("::" + (i+1));
+			if(i%100==0) System.out.println("::" + i);
 			String line = lines.get(i);
 			
 			helper_invertedIndex(stopWords, invertedIndex, i, line);

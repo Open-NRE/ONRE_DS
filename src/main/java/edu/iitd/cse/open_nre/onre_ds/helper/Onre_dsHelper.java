@@ -89,12 +89,20 @@ public class Onre_dsHelper {
 		return sb.toString();
 	}
 	
+	
+	static Tokenizer tokenizer;
 	public static String[] tokenize(String str) throws InvalidFormatException, IOException {
+		if(tokenizer == null) tokenizer = getTokenizer();
+		return tokenizer.tokenize(str);
+	}
+
+	private static Tokenizer getTokenizer() throws IOException,
+			InvalidFormatException {
 		//InputStream modelIn = new FileInputStream("lib/en-token.bin");
 		InputStream modelIn = Onre_dsHelper.class.getResourceAsStream("en-token.bin");
 		TokenizerModel model = new TokenizerModel(modelIn);
 		Tokenizer tokenizer = new TokenizerME(model);
-		return tokenizer.tokenize(str);
+		return tokenizer;
 	}
 	
 }
