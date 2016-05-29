@@ -38,7 +38,7 @@ public class Onre_dsRunMe {
 	public static void main(String[] args) throws Exception {
 		//System.out.println("I am running");
 		//System.out.println(Onre_dsHelper.extractSIUnit("indian rupee"));
-		String filePath_input = "";
+		String filePath_input = "/home/swarna/Desktop/nlp/project/ws/ONRE_DS/data/sentences.txt";
 		List<String> stopWords = OnreIO.readFile(OnreFilePaths.filePath_stopWords);
 		
 		List<String> jsonDepTrees = OnreIO.readFile(filePath_input+OnreConstants.SUFFIX_JSON_STRINGS);
@@ -55,7 +55,7 @@ public class Onre_dsRunMe {
 				//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
 				OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
 				String pattern = makePattern(onrePatternTree, fact);
-				if(pattern != null) patterns.add(pattern);
+				if(pattern != null && !patterns.contains(pattern)) patterns.add(pattern);
 			}
 		}
 		
@@ -232,12 +232,15 @@ public class Onre_dsRunMe {
 		
 		if(ancestor_qUnit_temp!=ancestor_qValue_temp) return null;
 		
+		++cntr;
+		
 		OnrePatternNode currentIntersectionNode = null;
-		while(ancestor_qUnit_temp == ancestor_qValue_temp && cntr<ancestors_qValue.size() && cntr<ancestors_qUnit.size()) {
-			++cntr;
+		while(ancestor_qUnit_temp == ancestor_qValue_temp) {
 			currentIntersectionNode = ancestor_qUnit_temp;
+			if(cntr>=ancestors_qValue.size() || cntr>=ancestors_qUnit.size()) break;
 			ancestor_qValue_temp = ancestors_qValue.get(cntr);
 			ancestor_qUnit_temp = ancestors_qUnit.get(cntr);
+			++cntr;
 		}
 		
 		return currentIntersectionNode;
@@ -262,6 +265,7 @@ public class Onre_dsRunMe {
 		return node;
 	}
 	
+	//lowest node with visited count 3(visited by all three)
 	private static OnrePatternNode findLCA(OnrePatternTree onrePatternTree) {
 		OnrePatternNode root = onrePatternTree.root;
 		
