@@ -1,0 +1,3 @@
+<(#is|are|was|were#VERB)<(attr#{quantity}#NNP|NN)(nsubj#{rel}#NNP|NN)<(prep#of#IN)<(pobj#{arg}#NNP|NN|PRP)>>>>
+<(#is|are|was|were#VERB)<(attr#{quantity}#CD)(nsubj#{rel}#NNP|NN)<(prep#of#IN)<(pobj#{arg}#NNP|NN|PRP)>>>>
+<(#has|have|had#VERB)<(dobj#{rel}#NNP|NN)<(prep#of#IN)<(pobj#{quantity}#CD)>>(nsubj#{arg}#NNP|NN|PRP)>>
