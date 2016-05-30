@@ -51,7 +51,7 @@ public class Onre_dsRunMe {
 		
 		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(filePath_input+OnreConstants.SUFFIX_SEED_FACTS);
 		
-		List<String> patterns = new ArrayList<>();
+		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 		for (Onre_dsFact fact : facts) {
 			if(isOptionSet && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
 			Set<Integer> intersection = getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords, isOptionSet);
@@ -60,12 +60,19 @@ public class Onre_dsRunMe {
 				//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
 				OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
 				String pattern = makePattern(onrePatternTree, fact, isOptionSet);
-				if(pattern != null && !patterns.contains(pattern)) patterns.add(pattern);
+				if(pattern == null) continue;
+				if(patternFrequencies.containsKey(pattern)) {
+					int count = patternFrequencies.get(pattern);
+					patternFrequencies.put(pattern, count+1);
+				}
+				else {
+					patternFrequencies.put(pattern, 1);
+				}
 			}
 			System.out.println(fact);
 		}
 		
-		OnreIO.writeFile(filePath_input+OnreConstants.SUFFIX_LEARNED_DEP_PATTERNS, patterns);
+		OnreIO.writeFileForMap(filePath_input+OnreConstants.SUFFIX_LEARNED_DEP_PATTERNS, patternFrequencies);
 		System.out.println("----Done----");
 	}
 
