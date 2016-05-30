@@ -66,9 +66,9 @@ public class Onre_dsHelper {
 			onre_dsFact.words = seedfact.split(" ; ");
 			
 			for (int i=0 ; i<onre_dsFact.words.length ; i++) {
-				onre_dsFact.words[i] = onre_dsFact.words[i].toLowerCase();
-				onre_dsFact.words[i] = onre_dsFact.words[i].replaceAll("\\.$", "");//TODO: no need of this after tokenizing
-				onre_dsFact.words[i] = onre_dsFact.words[i].replaceAll("\\,$", "");//TODO: no need of this after tokenizing
+				onre_dsFact.words[i] = onre_dsFact.words[i].toLowerCase().trim();
+				onre_dsFact.words[i] = onre_dsFact.words[i].replaceAll("\\.$", "").trim();//TODO: no need of this after tokenizing
+				onre_dsFact.words[i] = onre_dsFact.words[i].replaceAll("\\,$", "").trim();//TODO: no need of this after tokenizing
 			}
 			
 			facts.add(onre_dsFact);

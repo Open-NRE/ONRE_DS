@@ -38,6 +38,10 @@ public class Onre_dsRunMe {
 	public static void main(String[] args) throws Exception {
 		//System.out.println("I am running");
 		//System.out.println(Onre_dsHelper.extractSIUnit("indian rupee"));
+		Boolean isOptionSet = false;
+		if(args.length > 0)
+			isOptionSet = (args[0].equals("--o1")); // --o1 is used when we do not want to check the quantity's value 
+		
 		String filePath_input = "/home/swarna/Desktop/nlp/project/ws/ONRE_DS/data/sentences.txt";
 		List<String> stopWords = OnreIO.readFile(OnreFilePaths.filePath_stopWords);
 		
@@ -49,14 +53,16 @@ public class Onre_dsRunMe {
 		
 		List<String> patterns = new ArrayList<>();
 		for (Onre_dsFact fact : facts) {
-			Set<Integer> intersection = getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords);
+			if(isOptionSet && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
+			Set<Integer> intersection = getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords, isOptionSet);
 			for (Integer id : intersection) {
 				String jsonDepTree = jsonDepTrees.get(id);
 				//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
 				OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
-				String pattern = makePattern(onrePatternTree, fact);
+				String pattern = makePattern(onrePatternTree, fact, isOptionSet);
 				if(pattern != null && !patterns.contains(pattern)) patterns.add(pattern);
 			}
+			System.out.println(fact);
 		}
 		
 		OnreIO.writeFile(filePath_input+OnreConstants.SUFFIX_LEARNED_DEP_PATTERNS, patterns);
@@ -64,7 +70,7 @@ public class Onre_dsRunMe {
 	}
 
 	private static Set<Integer> getSentenceIdsWithMentionedFact(
-			Map<String, Set<Integer>> invertedIndex, Onre_dsFact fact, List<String> stopWords) {
+			Map<String, Set<Integer>> invertedIndex, Onre_dsFact fact, List<String> stopWords, Boolean isOptionSet) {
 		
 		List<Set<Integer>> listOfSetOfsentenceIds = new ArrayList<Set<Integer>>();
 		
@@ -72,8 +78,9 @@ public class Onre_dsRunMe {
 			//factWord = factWord.toLowerCase();
 			if(factWord.trim().isEmpty()) continue;
 			if(stopWords.contains(factWord)) continue;
+			if(isOptionSet && factWord.equals(fact.words[2])) continue; // If option set, don't match the value
 			
-			Set<Integer> setOfsentenceIds = invertedIndex.get(factWord);
+			Set<Integer> setOfsentenceIds = invertedIndex.get(factWord.trim());
 			listOfSetOfsentenceIds.add(setOfsentenceIds);
 		}
 		
@@ -106,21 +113,23 @@ public class Onre_dsRunMe {
 		return true;
 	}
 	
-	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
+	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact, Boolean isOptionSet) {
 		if(onrePatternTree == null) return null;
 		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.words[0], OnreExtractionPartType.ARGUMENT);
 		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.words[1], OnreExtractionPartType.RELATION);
-		OnrePatternNode qValueNode = searchNode_markVisited(onrePatternTree, fact.words[2], OnreExtractionPartType.QUANTITY);
 		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.words[3], OnreExtractionPartType.QUANTITY);
 		
-		if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
+		if(!isOptionSet) {
+			OnrePatternNode qValueNode = searchNode_markVisited(onrePatternTree, fact.words[2], OnreExtractionPartType.QUANTITY);
+			if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
+			qValueNode.word = "{quantity}";
+		}
 		
 		argNode.word = "{arg}";
 		relNode.word = "{rel}";
-		qValueNode.word = "{quantity}";
 		qUnitNode.word = "{quantity}";
 		
-		OnrePatternNode LCA = findLCA(onrePatternTree);
+		OnrePatternNode LCA = findLCA(onrePatternTree, isOptionSet);
 		StringBuilder sb_pattern = new StringBuilder();
 		sb_pattern.append("<");
 		makePattern_helper(LCA, sb_pattern);
@@ -266,7 +275,7 @@ public class Onre_dsRunMe {
 	}
 	
 	//lowest node with visited count 3(visited by all three)
-	private static OnrePatternNode findLCA(OnrePatternTree onrePatternTree) {
+	private static OnrePatternNode findLCA(OnrePatternTree onrePatternTree, Boolean isOptionSet) {
 		OnrePatternNode root = onrePatternTree.root;
 		
 		OnrePatternNode LCA = null;

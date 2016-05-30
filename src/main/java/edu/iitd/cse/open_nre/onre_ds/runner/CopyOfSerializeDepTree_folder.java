@@ -23,7 +23,7 @@ import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
  * @author harinder
  *
  */
-public class SerializeDepTree_file {
+public class CopyOfSerializeDepTree_folder {
 
 	/**
 	 * @param args
@@ -46,7 +46,7 @@ public class SerializeDepTree_file {
 		
 		for (int i=0; i<lines.size(); i++) {
 
-			if(i%100==0) System.out.println("::" + i);
+			System.out.println("::" + (i+1));
 			String line = lines.get(i);
 			
 			helper_invertedIndex(stopWords, invertedIndex, i, line);
