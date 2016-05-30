@@ -12,9 +12,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import edu.iitd.cse.open_nre.onre.OnreGlobals;
 import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
 import edu.iitd.cse.open_nre.onre.constants.OnreExtractionPartType;
 import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
+import edu.iitd.cse.open_nre.onre.constants.Onre_dsRunType;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternNode;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternTree;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
@@ -29,6 +31,10 @@ import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
  *
  */
 public class Onre_dsRunMe {
+	
+	private static void setArguments(String[] args) {
+		if(args.length>0) OnreGlobals.arg_runType = Onre_dsRunType.getType(args[0]);
+	}
 
 	/**
 	 * @param args
@@ -38,12 +44,11 @@ public class Onre_dsRunMe {
 	public static void main(String[] args) throws Exception {
 		//System.out.println("I am running");
 		//System.out.println(Onre_dsHelper.extractSIUnit("indian rupee"));
-		Boolean isOptionSet = false;
-		if(args.length > 0)
-			isOptionSet = (args[0].equals("--o1")); // --o1 is used when we do not want to check the quantity's value 
 		
-		String filePath_input = "/home/swarna/Desktop/nlp/project/ws/ONRE_DS/data/sentences.txt";
-		List<String> stopWords = OnreIO.readFile(OnreFilePaths.filePath_stopWords);
+		setArguments(args);
+
+		String filePath_input = "data/sentences.txt";
+		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
 		
 		List<String> jsonDepTrees = OnreIO.readFile(filePath_input+OnreConstants.SUFFIX_JSON_STRINGS);
 		
@@ -53,13 +58,13 @@ public class Onre_dsRunMe {
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 		for (Onre_dsFact fact : facts) {
-			if(isOptionSet && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
-			Set<Integer> intersection = getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords, isOptionSet);
+			if(OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
+			Set<Integer> intersection = getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords);
 			for (Integer id : intersection) {
 				String jsonDepTree = jsonDepTrees.get(id);
 				//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
 				OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
-				String pattern = makePattern(onrePatternTree, fact, isOptionSet);
+				String pattern = makePattern(onrePatternTree, fact);
 				if(pattern == null) continue;
 				if(patternFrequencies.containsKey(pattern)) {
 					int count = patternFrequencies.get(pattern);
@@ -77,7 +82,7 @@ public class Onre_dsRunMe {
 	}
 
 	private static Set<Integer> getSentenceIdsWithMentionedFact(
-			Map<String, Set<Integer>> invertedIndex, Onre_dsFact fact, List<String> stopWords, Boolean isOptionSet) {
+			Map<String, Set<Integer>> invertedIndex, Onre_dsFact fact, List<String> stopWords) {
 		
 		List<Set<Integer>> listOfSetOfsentenceIds = new ArrayList<Set<Integer>>();
 		
@@ -85,7 +90,9 @@ public class Onre_dsRunMe {
 			//factWord = factWord.toLowerCase();
 			if(factWord.trim().isEmpty()) continue;
 			if(stopWords.contains(factWord)) continue;
-			if(isOptionSet && factWord.equals(fact.words[2])) continue; // If option set, don't match the value
+			
+			//don't match the value for type1 runType
+			if(OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 && factWord.equals(fact.words[2])) continue;
 			
 			Set<Integer> setOfsentenceIds = invertedIndex.get(factWord.trim());
 			listOfSetOfsentenceIds.add(setOfsentenceIds);
@@ -120,13 +127,13 @@ public class Onre_dsRunMe {
 		return true;
 	}
 	
-	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact, Boolean isOptionSet) {
+	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
 		if(onrePatternTree == null) return null;
 		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.words[0], OnreExtractionPartType.ARGUMENT);
 		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.words[1], OnreExtractionPartType.RELATION);
 		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.words[3], OnreExtractionPartType.QUANTITY);
 		
-		if(!isOptionSet) {
+		if(OnreGlobals.arg_runType!=Onre_dsRunType.TYPE1) {
 			OnrePatternNode qValueNode = searchNode_markVisited(onrePatternTree, fact.words[2], OnreExtractionPartType.QUANTITY);
 			if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
 			qValueNode.word = "{quantity}";
@@ -136,7 +143,7 @@ public class Onre_dsRunMe {
 		relNode.word = "{rel}";
 		qUnitNode.word = "{quantity}";
 		
-		OnrePatternNode LCA = findLCA(onrePatternTree, isOptionSet);
+		OnrePatternNode LCA = findLCA(onrePatternTree);
 		StringBuilder sb_pattern = new StringBuilder();
 		sb_pattern.append("<");
 		makePattern_helper(LCA, sb_pattern);
@@ -282,7 +289,7 @@ public class Onre_dsRunMe {
 	}
 	
 	//lowest node with visited count 3(visited by all three)
-	private static OnrePatternNode findLCA(OnrePatternTree onrePatternTree, Boolean isOptionSet) {
+	private static OnrePatternNode findLCA(OnrePatternTree onrePatternTree) {
 		OnrePatternNode root = onrePatternTree.root;
 		
 		OnrePatternNode LCA = null;
