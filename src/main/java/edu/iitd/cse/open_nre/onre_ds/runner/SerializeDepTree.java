@@ -3,6 +3,7 @@
  */
 package edu.iitd.cse.open_nre.onre_ds.runner;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,8 +15,8 @@ import java.util.TreeSet;
 import opennlp.tools.util.InvalidFormatException;
 import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
 import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
-import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
+import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
 
@@ -23,46 +24,56 @@ import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
  * @author harinder
  *
  */
-public class SerializeDepTree_file {
+public class SerializeDepTree {
 
 	/**
 	 * @param args
 	 * @throws ClassNotFoundException 
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		String filePath_inputSentences = "/home/swarna/Desktop/nlp/project/ws/ONRE_DS/data/sentences.txt";
+		//String filePath_inputSentences = "/home/harinder/Documents/IITD_MTP/numericSentencesKiKhoj/CluewebSeUmeed/0004wb/0004wb-18.sentences_filtered";
 		/*String filePath_stopWords = "data/stopwords.txt";
 		String filePath_jsonDepTrees = "data/jsonDepTrees";
 		String filePath_invertedIndex = "data/invertedIndex";*/
 		//String filePath_inputSentences = args[0];
 		
-		System.out.println("Starting with file: " + filePath_inputSentences);
 		
-		List<String> lines = OnreIO.readFile(filePath_inputSentences);
-		List<String> stopWords = OnreIO.readFile(OnreFilePaths.filePath_stopWords);
+		File folder = new File(args[0]);
 		
-		List<String> jsonStrings = new ArrayList<String>();
-		Map<String, Set<Integer>> invertedIndex = new HashMap<>();
+		Set<String> files = new TreeSet<>();
+		OnreUtils.listFilesForFolder(folder, files);
 		
-		for (int i=0; i<lines.size(); i++) {
-
-			if(i%100==0) System.out.println("::" + i);
-			String line = lines.get(i);
+		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
+		for (String file : files) {
+			if(!file.endsWith("_filtered")) continue;
 			
-			helper_invertedIndex(stopWords, invertedIndex, i, line);
-			String jsonString = OnreHelper_json.getJsonString(line); 
-			//if(jsonString!=null) 
-				jsonStrings.add(jsonString);
-
-			//onrePatternNode = gson.fromJson(jsonString, OnrePatternNode.class);
+			System.out.println("Starting with file: " + file);
+			
+			List<String> lines = OnreIO.readFile(file);
+			
+			List<String> jsonStrings = new ArrayList<String>();
+			Map<String, Set<Integer>> invertedIndex = new HashMap<>();
+			
+			for (int i=0; i<lines.size(); i++) {
+	
+				if(i%1000==0) System.out.println("::" + i);
+				String line = lines.get(i);
+				
+				helper_invertedIndex(stopWords, invertedIndex, i, line);
+				//String jsonString = OnreHelper_json.getJsonString(line);//TODO: IMP:uncomment 
+				//if(jsonString!=null) //TODO: this is not required..delete this line later
+					//jsonStrings.add(jsonString);//TODO: IMP:uncomment 
+	
+				//onrePatternNode = gson.fromJson(jsonString, OnrePatternNode.class);
+				//System.out.println();
+			}
+			
+			Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);
+			//OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);//TODO: IMP:uncomment 
+			
+			//invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_invertedIndex); 
 			//System.out.println();
 		}
-		
-		Onre_dsIO.writeObjectToFile(filePath_inputSentences+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);
-		OnreIO.writeFile(filePath_inputSentences+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);
-		
-		//invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_invertedIndex); 
-		//System.out.println();
 	}
 
 	private static void helper_invertedIndex(List<String> stopWords,

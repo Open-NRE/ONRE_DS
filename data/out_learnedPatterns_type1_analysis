@@ -1,0 +1,27 @@
+<(#is|are|was|were#VERB)<(nsubj#{rel}#NNP|NN)<(prep#of|for#IN)<(pobj#{arg}#NNP|NN|PRP)>>(attr#{quantity}#.+)>>
+<(#has|have|had#VERB)<(dobj#{rel}#NNP|NN)<(prep#of#IN)<(pobj#{quantity}#.+)>>(nsubj#{arg}#NNP|NN|PRP)>>
+<(#is|are|was|were#VERB)<(nsubj#{arg}#NNP|NN|PRP)(acomp|advmod#{rel}#JJ|RB)<(npadvmod#{quantity}#.+)>>>
+<(#has|have|had#VERB)<(nsubj#{arg}#NNP|NN|PRP)(dobj#{quantity}#.+)<(prep#of#IN)<(pobj#{rel}#NNP|NN)>>>>
+<(##VERB)<(attr|acomp#{quantity}#.+)(nsubj#{rel}#NNP|NN)<(poss#{arg}#PRP\$)>>>
+<(#is|are|was|were#VERB)<(nsubj#{arg}#NNP|NN|PRP)(acomp#{rel}#VERB)<(prep##IN)<(pobj#{quantity}#.+)>>>>
+
+2: <(#has|have|had#VERB)<(dobj#{rel}#NNP|NN)<(prep#of|for#IN)<(pobj#{quantity}#NNP|NN)>>(nsubj#{arg}#NNP|NN|PRP)>>
+39
+1: <(#is|are|was|were#VERB)<(attr#{quantity}#NNP|NN)(nsubj#{rel}#NNP|NN)<(prep#of|for#IN)<(pobj#{arg}#NNP|NN|PRP)>>>>
+32
+3: <(#is|are|was|were#VERB)<(acomp#{rel}#JJ)<(npadvmod#{quantity}#NNP|NN)>(nsubj#{arg}#NNP|NN|PRP)>>
+32
+3: <(#is|are|was|were#VERB)<(advmod#{rel}#RB)<(npadvmod#{quantity}#NNP|NN)>(nsubj#{arg}#NNP|NN|PRP)>>
+23
+4: <(#has|have|had#VERB)<(dobj#{quantity}#NNP|NN)<(prep#of|for#IN)<(pobj#{rel}#NNP|NN)>>(nsubj#{arg}#NNP|NN|PRP)>>
+3
+5: <(#is|are|was|were#VERB)<(attr#{quantity}#NNP|NN)(nsubj#{rel}#NNP|NN)<(poss#{arg}#PRP$)>>>
+1
+
+
+<(#closed#VERB)<(advmod#{rel}#RB)<(npadvmod#{quantity}#NNP|NN)>(nsubj#{arg}#NNP|NN|PRP)>>
+<(ccomp#rose#VERB)<(advcl#declined#VERB)<(nsubj#income#NNP|NN)<(prep#in#IN)<(pobj#{quantity}#NNP|NN)>>>(nsubj#{rel}#NNP|NN)<(nn#{arg}#NNP|NN|PRP)>>>
+
+<(#has|have|had#VERB)<(dobj#{rel}#NNP|NN)<(prep#of|for#IN)<(pobj#trillion#CD)<(quantmod#{quantity}#$)>>>(nsubj#{arg}#NNP|NN|PRP)>>
+<(#been#VERB)<(attr#{quantity}#NNP|NN)(nsubj#{rel}#NNP|NN)<(prep#of|for#IN)<(pobj#{arg}#NNP|NN|PRP)>>>>
+<(#is|are|was|were#VERB)<(advmod#{rel}#RB)<(npadvmod#{quantity}#NNP|NN)>(nsubj#IXIC#NNP|NN)<(nn#Index#NNP|NN)<(nn#{arg}#NNP|NN|PRP)>>>>

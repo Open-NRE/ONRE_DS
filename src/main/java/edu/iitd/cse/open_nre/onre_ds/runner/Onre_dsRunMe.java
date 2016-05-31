@@ -3,6 +3,7 @@
  */
 package edu.iitd.cse.open_nre.onre_ds.runner;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
 
 import edu.iitd.cse.open_nre.onre.OnreGlobals;
 import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
@@ -21,6 +23,7 @@ import edu.iitd.cse.open_nre.onre.domain.OnrePatternNode;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternTree;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
+import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
 import edu.iitd.cse.open_nre.onre_ds.domain.Onre_dsFact;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
@@ -42,43 +45,63 @@ public class Onre_dsRunMe {
 	 */
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
-		//System.out.println("I am running");
-		//System.out.println(Onre_dsHelper.extractSIUnit("indian rupee"));
-		
-		setArguments(args);
+		Onre_dsRunMe.setArguments(args);
 
-		String filePath_input = "data/sentences.txt";
+		File folder = new File(args[1]);
+		
+		Set<String> files = new TreeSet<>();
+		OnreUtils.listFilesForFolder(folder, files);
+		
 		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
-		
-		List<String> jsonDepTrees = OnreIO.readFile(filePath_input+OnreConstants.SUFFIX_JSON_STRINGS);
-		
-		Map<String, Set<Integer>> invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_input+OnreConstants.SUFFIX_INVERTED_INDEX);
-		
-		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(filePath_input+OnreConstants.SUFFIX_SEED_FACTS);
+		List<Onre_dsFact> facts = Onre_dsHelper.readFacts("/home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/out_facts");
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
-		for (Onre_dsFact fact : facts) {
-			if(OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
-			Set<Integer> intersection = getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords);
-			for (Integer id : intersection) {
-				String jsonDepTree = jsonDepTrees.get(id);
-				//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
-				OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
-				String pattern = makePattern(onrePatternTree, fact);
-				if(pattern == null) continue;
-				if(patternFrequencies.containsKey(pattern)) {
-					int count = patternFrequencies.get(pattern);
-					patternFrequencies.put(pattern, count+1);
+		for (String file : files) {
+			if(!file.endsWith("_filtered")) continue;
+			
+			System.out.println("running file: " + file);
+			
+			List<String> jsonDepTrees = OnreIO.readFile(file+OnreConstants.SUFFIX_JSON_STRINGS);
+			
+			Map<String, Set<Integer>> invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(file+OnreConstants.SUFFIX_INVERTED_INDEX);
+			
+			//Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
+			for (Onre_dsFact fact : facts) {
+				if(isType1or2() && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
+				if(isType1or2() && fact.words[3].split(" ").length>1) continue; // Ignoring - unit has multiple words
+				
+				Set<Integer> intersection = Onre_dsRunMe.getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords);
+				if(intersection == null) continue;
+				
+				for (Integer id : intersection) {
+					String jsonDepTree = jsonDepTrees.get(id);
+					//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
+					OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
+					
+					//System.out.println(onrePatternTree.sentence);
+					//System.out.println(fact);
+					
+					String pattern = Onre_dsRunMe.makePattern(onrePatternTree, fact);
+					if(pattern == null) continue;
+					System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
+					
+					if(patternFrequencies.containsKey(pattern)) {
+						int count = patternFrequencies.get(pattern);
+						patternFrequencies.put(pattern, count+1);
+					}
+					else patternFrequencies.put(pattern, 1);
 				}
-				else {
-					patternFrequencies.put(pattern, 1);
-				}
+				
+				//System.out.println(fact);
 			}
-			System.out.println(fact);
 		}
-		
-		OnreIO.writeFileForMap(filePath_input+OnreConstants.SUFFIX_LEARNED_DEP_PATTERNS, patternFrequencies);
+		patternFrequencies=OnreUtils.sortByValue(patternFrequencies);
+		OnreIO.writeFileForMap("data/out_learnedPatterns", patternFrequencies);
 		System.out.println("----Done----");
+	}
+	
+	private static boolean isType1or2() {
+		return OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 || OnreGlobals.arg_runType==Onre_dsRunType.TYPE2;
 	}
 
 	private static Set<Integer> getSentenceIdsWithMentionedFact(
@@ -95,6 +118,7 @@ public class Onre_dsRunMe {
 			if(OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 && factWord.equals(fact.words[2])) continue;
 			
 			Set<Integer> setOfsentenceIds = invertedIndex.get(factWord.trim());
+			if(setOfsentenceIds == null) return null;
 			listOfSetOfsentenceIds.add(setOfsentenceIds);
 		}
 		
@@ -129,12 +153,18 @@ public class Onre_dsRunMe {
 	
 	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
 		if(onrePatternTree == null) return null;
+		
+		OnreUtils.sortPatternTree(onrePatternTree.root);
+
 		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.words[0], OnreExtractionPartType.ARGUMENT);
 		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.words[1], OnreExtractionPartType.RELATION);
 		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.words[3], OnreExtractionPartType.QUANTITY);
 		
+		if(argNode==null || relNode==null || qUnitNode==null) return null;
+		
 		if(OnreGlobals.arg_runType!=Onre_dsRunType.TYPE1) {
 			OnrePatternNode qValueNode = searchNode_markVisited(onrePatternTree, fact.words[2], OnreExtractionPartType.QUANTITY);
+			if(qValueNode==null) return null;
 			if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
 			qValueNode.word = "{quantity}";
 		}
@@ -179,6 +209,9 @@ public class Onre_dsRunMe {
 		pattern = pattern.replaceAll("#NN\\)", str_noun);
 		//System.out.println(pattern);
 		
+		pattern = pattern.replaceAll("\\(prep#of#IN\\)", "(prep#of|for#IN)");
+		pattern = pattern.replaceAll("\\(prep#for#IN\\)", "(prep#of|for#IN)");
+		
 		pattern = pattern.replaceAll("#\\{arg\\}#NNP\\|NN\\)", "#{arg}#NNP|NN|PRP)");
 		//System.out.println(pattern);
 		
@@ -215,7 +248,7 @@ public class Onre_dsRunMe {
 		}
 		
 		System.err.println("---It shall never come here...problem, exiting---");
-		System.exit(1);
+		//System.exit(1); //TODO: this shall be uncommented..commented due to "\C2" special char issue
 		return null;
 	}
 	
@@ -283,12 +316,14 @@ public class Onre_dsRunMe {
 	
 	private static OnrePatternNode searchNode_markVisited(OnrePatternTree onrePatternTree, String word, OnreExtractionPartType partType) {
 		OnrePatternNode node = searchNode(onrePatternTree, word, partType);
+		if(node==null) return null;
+		
 		markVisited(node);
 		node.nodeType = partType;
 		return node;
 	}
 	
-	//lowest node with visited count 3(visited by all three)
+	//lowest node with visited count 3(visited by all three factWords)
 	private static OnrePatternNode findLCA(OnrePatternTree onrePatternTree) {
 		OnrePatternNode root = onrePatternTree.root;
 		

@@ -54,6 +54,8 @@ public class Onre_dsHelper {
     }*/
 	
 	public static List<Onre_dsFact> readFacts(String filePath_seedfacts) throws IOException {
+		//TODO: splitting can be better - try to use tokenizing instead - like while getting inverted index
+		
 		List<String> seedfacts = OnreIO.readFile(filePath_seedfacts);
 		
 		List<Onre_dsFact> facts = new ArrayList<>();
