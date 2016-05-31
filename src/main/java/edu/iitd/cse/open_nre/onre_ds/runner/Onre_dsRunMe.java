@@ -21,6 +21,7 @@ import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
 import edu.iitd.cse.open_nre.onre.constants.Onre_dsRunType;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternNode;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternTree;
+import edu.iitd.cse.open_nre.onre.helper.OnreHelper_DanrothQuantifier;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
@@ -59,7 +60,7 @@ public class Onre_dsRunMe {
 		for (String file : files) {
 			if(!file.endsWith("_filtered")) continue;
 			
-			System.out.println("running file: " + file);
+			System.out.println("-------------------------running file: " + file);
 			
 			List<String> jsonDepTrees = OnreIO.readFile(file+OnreConstants.SUFFIX_JSON_STRINGS);
 			
@@ -67,8 +68,10 @@ public class Onre_dsRunMe {
 			
 			//Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 			for (Onre_dsFact fact : facts) {
-				if(isType1or2() && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
-				if(isType1or2() && fact.words[3].split(" ").length>1) continue; // Ignoring - unit has multiple words
+				if(!typeFilter(fact)) continue;
+				
+				//if(isType1or2() && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
+				//if(isType1or2() && fact.words[3].split(" ").length>1) continue; // Ignoring - unit has multiple words
 				
 				Set<Integer> intersection = Onre_dsRunMe.getSentenceIdsWithMentionedFact(invertedIndex, fact, stopWords);
 				if(intersection == null) continue;
@@ -96,14 +99,49 @@ public class Onre_dsRunMe {
 			}
 		}
 		patternFrequencies=OnreUtils.sortByValue(patternFrequencies);
-		OnreIO.writeFileForMap("data/out_learnedPatterns", patternFrequencies);
+		OnreIO.writeFileForMap("data/out_learnedPatterns_"+OnreGlobals.arg_runType.text, patternFrequencies);
 		System.out.println("----Done----");
 	}
-	
-	private static boolean isType1or2() {
-		return OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 || OnreGlobals.arg_runType==Onre_dsRunType.TYPE2;
+
+	private static boolean typeFilter(Onre_dsFact fact) {
+		
+		switch (OnreGlobals.arg_runType) {
+		case TYPE1:
+			if(!hasUnit(fact)) return false;
+			if(hasMultipleWords(fact)) return false;
+			break;
+			
+		case TYPE2:
+			if(!hasUnit(fact)) return false;
+			if(hasMultipleWords(fact)) return false;
+			break;
+			
+		case TYPE3:
+			if(!hasUnit(fact)) return false;
+			if(hasMultipleWords(fact)) return false;
+			break;
+
+		/*default:
+			break;*/
+		}
+		
+		return true;
 	}
 
+	private static boolean hasUnit(Onre_dsFact fact) {
+		if(fact.words.length == 3) return false; // Ignore the fact, if the fact has no unit
+		return true;
+	}
+	
+	private static boolean hasMultipleWords(Onre_dsFact fact) {
+		if(fact.words[3].split(" ").length>1) return true; // Ignoring - unit has multiple words
+		return false;
+	}
+	
+/*	private static boolean isType1or2() {
+		return OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 || OnreGlobals.arg_runType==Onre_dsRunType.TYPE2;
+	}
+*/
 	private static Set<Integer> getSentenceIdsWithMentionedFact(
 			Map<String, Set<Integer>> invertedIndex, Onre_dsFact fact, List<String> stopWords) {
 		
@@ -114,8 +152,7 @@ public class Onre_dsRunMe {
 			if(factWord.trim().isEmpty()) continue;
 			if(stopWords.contains(factWord)) continue;
 			
-			//don't match the value for type1 runType
-			if(OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 && factWord.equals(fact.words[2])) continue;
+			if(!typeFilter(fact, factWord)) continue;
 			
 			Set<Integer> setOfsentenceIds = invertedIndex.get(factWord.trim());
 			if(setOfsentenceIds == null) return null;
@@ -128,6 +165,31 @@ public class Onre_dsRunMe {
 		}
 		
 		return intersection;
+	}
+
+	private static boolean typeFilter(Onre_dsFact fact, String factWord) {
+		if(isUnitType(fact, factWord)) return false; //don't match the qUnit
+		
+		switch(OnreGlobals.arg_runType){
+		case TYPE1:
+			if(isValueType(fact, factWord)) return false; //don't match the qValue
+			break;
+		case TYPE3:
+			if(isValueType(fact, factWord)) return false; //don't match the qValue
+			break;
+		}
+		
+		return true;
+	}
+	
+	private static boolean isUnitType(Onre_dsFact fact, String factWord) {
+		if(factWord.equals(fact.getQUnit())) return true; 
+		return false;
+	}
+
+	private static boolean isValueType(Onre_dsFact fact, String factWord) {
+		if(factWord.equals(fact.getQValue())) return true;
+		return false;
 	}
 	
 	private static boolean quantityAndUnitSelection(OnrePatternNode qValueNode, OnrePatternNode qUnitNode) {
@@ -156,21 +218,54 @@ public class Onre_dsRunMe {
 		
 		OnreUtils.sortPatternTree(onrePatternTree.root);
 
-		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.words[0], OnreExtractionPartType.ARGUMENT);
-		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.words[1], OnreExtractionPartType.RELATION);
-		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.words[3], OnreExtractionPartType.QUANTITY);
+		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.getArg(), OnreExtractionPartType.ARGUMENT);
+		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.getRel(), OnreExtractionPartType.RELATION);
+		if(argNode==null || relNode==null) return null;
 		
-		if(argNode==null || relNode==null || qUnitNode==null) return null;
-		
-		if(OnreGlobals.arg_runType!=Onre_dsRunType.TYPE1) {
-			OnrePatternNode qValueNode = searchNode_markVisited(onrePatternTree, fact.words[2], OnreExtractionPartType.QUANTITY);
-			if(qValueNode==null) return null;
-			if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
-			qValueNode.word = "{quantity}";
+		Map<String, String> map_quantifiers_unit = OnreHelper_DanrothQuantifier.getUnitMap(onrePatternTree.sentence);
+		String unitInPhrase = map_quantifiers_unit.get(fact.getQUnit());
+		if(unitInPhrase == null) return null;
+		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, unitInPhrase, OnreExtractionPartType.QUANTITY);
+		if(qUnitNode == null) {
+			System.err.println("--------ERROR in qUnitNode for sentence: " + onrePatternTree.sentence);
+			return null;
+			//System.exit(1);
 		}
+
+		//OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.getUnit(), OnreExtractionPartType.QUANTITY);
+		//if(qUnitNode==null) return null;
+		
+		OnrePatternNode qValueNode = null;
+		
+		switch (OnreGlobals.arg_runType) {
+		case TYPE1:
+			
+			break;
+			
+		case TYPE2:
+			qValueNode = searchNode_markVisited(onrePatternTree, fact.getQValue(), OnreExtractionPartType.QUANTITY);
+			if(qValueNode==null) return null;
+
+			break;
+
+		case TYPE3:
+			Map<Double, String> map_quantifiers_value = OnreHelper_DanrothQuantifier.getValueMap(onrePatternTree.sentence);
+			String valueStr = map_quantifiers_value.get(fact.getQValue());
+			if(valueStr == null) return null; //value not found
+			
+			qValueNode = searchNode_markVisited(onrePatternTree, valueStr, OnreExtractionPartType.QUANTITY);
+			if(qValueNode == null) {
+				System.err.println("this shall never happen...exiting"); 
+				System.exit(1);
+			}
+		}
+		
+		//need to select one whenever we have both unit and value
+		if(qUnitNode!=null && qValueNode!=null) if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
 		
 		argNode.word = "{arg}";
 		relNode.word = "{rel}";
+		if(qValueNode!=null) qValueNode.word = "{quantity}";
 		qUnitNode.word = "{quantity}";
 		
 		OnrePatternNode LCA = findLCA(onrePatternTree);

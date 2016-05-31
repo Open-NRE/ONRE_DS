@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import opennlp.tools.util.InvalidFormatException;
 import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
 import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
+import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
@@ -60,16 +61,16 @@ public class SerializeDepTree {
 				String line = lines.get(i);
 				
 				helper_invertedIndex(stopWords, invertedIndex, i, line);
-				//String jsonString = OnreHelper_json.getJsonString(line);//TODO: IMP:uncomment 
+				String jsonString = OnreHelper_json.getJsonString(line);//TODO: IMP:uncomment 
 				//if(jsonString!=null) //TODO: this is not required..delete this line later
-					//jsonStrings.add(jsonString);//TODO: IMP:uncomment 
+					jsonStrings.add(jsonString);//TODO: IMP:uncomment 
 	
 				//onrePatternNode = gson.fromJson(jsonString, OnrePatternNode.class);
 				//System.out.println();
 			}
 			
 			Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);
-			//OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);//TODO: IMP:uncomment 
+			OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);//TODO: IMP:uncomment 
 			
 			//invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_invertedIndex); 
 			//System.out.println();

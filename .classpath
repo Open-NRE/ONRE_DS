@@ -50,5 +50,12 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/ONRE"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-8-openjdk-amd64"/>
 	<classpathentry kind="lib" path="jars/scala-library-2.10.4.jar"/>
+	<classpathentry kind="lib" path="/ONRE/lib/coreutilities-0.1.2.jar"/>
+	<classpathentry kind="lib" path="/ONRE/lib/edison-0.7.1.jar"/>
+	<classpathentry kind="lib" path="/ONRE/lib/gson-2.6.2.jar"/>
+	<classpathentry kind="lib" path="/ONRE/lib/illinois-pos-2.0.0.jar"/>
+	<classpathentry kind="lib" path="/ONRE/lib/illinois-quantifier-2.0.1.jar"/>
+	<classpathentry kind="lib" path="/ONRE/lib/LBJava-1.0.3.jar"/>
+	<classpathentry kind="lib" path="/ONRE/lib/trove-3.0.0a1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

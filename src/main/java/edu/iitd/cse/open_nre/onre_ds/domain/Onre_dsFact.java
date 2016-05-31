@@ -26,4 +26,20 @@ public class Onre_dsFact {
 		}
 		return temp;
 	}
+	
+	public String getArg() {
+		return this.words[0];
+	}
+	
+	public String getRel() {
+		return this.words[1];
+	}
+	
+	public String getQValue() {
+		return this.words[2];
+	}
+	
+	public String getQUnit() {
+		return this.words[3];
+	}
 }
