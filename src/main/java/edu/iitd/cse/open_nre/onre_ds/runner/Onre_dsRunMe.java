@@ -25,6 +25,9 @@ import edu.iitd.cse.open_nre.onre.helper.OnreHelper_DanrothQuantifier;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
+import edu.iitd.cse.open_nre.onre.utils.OnreUtils_number;
+import edu.iitd.cse.open_nre.onre.utils.OnreUtils_string;
+import edu.iitd.cse.open_nre.onre.utils.OnreUtils_tree;
 import edu.iitd.cse.open_nre.onre_ds.domain.Onre_dsFact;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
@@ -40,10 +43,6 @@ public class Onre_dsRunMe {
 		if(args.length>0) OnreGlobals.arg_runType = Onre_dsRunType.getType(args[0]);
 	}
 
-	/**
-	 * @param args
-	 * @throws Exception 
-	 */
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
 		Onre_dsRunMe.setArguments(args);
@@ -58,6 +57,7 @@ public class Onre_dsRunMe {
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 		for (String file : files) {
+			
 			if(!file.endsWith("_filtered")) continue;
 			
 			System.out.println("-------------------------running file: " + file);
@@ -66,8 +66,10 @@ public class Onre_dsRunMe {
 			
 			Map<String, Set<Integer>> invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(file+OnreConstants.SUFFIX_INVERTED_INDEX);
 			
+			
 			//Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 			for (Onre_dsFact fact : facts) {
+				
 				if(!typeFilter(fact)) continue;
 				
 				//if(isType1or2() && fact.words.length == 3) continue; // Ignore the fact, if the fact has no unit
@@ -81,12 +83,9 @@ public class Onre_dsRunMe {
 					//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
 					OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
 					
-					//System.out.println(onrePatternTree.sentence);
-					//System.out.println(fact);
-					
 					String pattern = Onre_dsRunMe.makePattern(onrePatternTree, fact);
 					if(pattern == null) continue;
-					System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
+					//System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
 					
 					if(patternFrequencies.containsKey(pattern)) {
 						int count = patternFrequencies.get(pattern);
@@ -142,6 +141,7 @@ public class Onre_dsRunMe {
 		return OnreGlobals.arg_runType==Onre_dsRunType.TYPE1 || OnreGlobals.arg_runType==Onre_dsRunType.TYPE2;
 	}
 */
+	@SuppressWarnings("unchecked")
 	private static Set<Integer> getSentenceIdsWithMentionedFact(
 			Map<String, Set<Integer>> invertedIndex, Onre_dsFact fact, List<String> stopWords) {
 		
@@ -154,9 +154,13 @@ public class Onre_dsRunMe {
 			
 			if(!typeFilter(fact, factWord)) continue;
 			
-			Set<Integer> setOfsentenceIds = invertedIndex.get(factWord.trim());
+			TreeSet<Integer> setOfsentenceIds = (TreeSet<Integer>)(invertedIndex.get(factWord.trim()));
 			if(setOfsentenceIds == null) return null;
-			listOfSetOfsentenceIds.add(setOfsentenceIds);
+			
+			Set<Integer> setOfsentenceIds_cloned = (TreeSet<Integer>)setOfsentenceIds.clone();  
+			if(setOfsentenceIds_cloned == null) return null;
+
+			listOfSetOfsentenceIds.add(setOfsentenceIds_cloned);
 		}
 		
 		Set<Integer> intersection = listOfSetOfsentenceIds.get(0);
@@ -173,6 +177,8 @@ public class Onre_dsRunMe {
 		switch(OnreGlobals.arg_runType){
 		case TYPE1:
 			if(isValueType(fact, factWord)) return false; //don't match the qValue
+			break;
+		case TYPE2:
 			break;
 		case TYPE3:
 			if(isValueType(fact, factWord)) return false; //don't match the qValue
@@ -216,7 +222,7 @@ public class Onre_dsRunMe {
 	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
 		if(onrePatternTree == null) return null;
 		
-		OnreUtils.sortPatternTree(onrePatternTree.root);
+		OnreUtils_tree.sortPatternTree(onrePatternTree.root);
 
 		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.getArg(), OnreExtractionPartType.ARGUMENT);
 		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.getRel(), OnreExtractionPartType.RELATION);
@@ -227,12 +233,12 @@ public class Onre_dsRunMe {
 		if(unitInPhrase == null) return null;
 		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, unitInPhrase, OnreExtractionPartType.QUANTITY);
 		if(qUnitNode == null) {
-			System.err.println("--------ERROR in qUnitNode for sentence: " + onrePatternTree.sentence);
+			//System.err.println("--------ERROR in qUnitNode for sentence: " + onrePatternTree.sentence);
 			return null;
-			//System.exit(1);
+			//System.exit(1); //there is a reason (which we don't remember), but yes there is a reason to comment this
 		}
 
-		//OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.getUnit(), OnreExtractionPartType.QUANTITY);
+		//OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.getQUnit(), OnreExtractionPartType.QUANTITY);
 		//if(qUnitNode==null) return null;
 		
 		OnrePatternNode qValueNode = null;
@@ -250,7 +256,7 @@ public class Onre_dsRunMe {
 
 		case TYPE3:
 			Map<Double, String> map_quantifiers_value = OnreHelper_DanrothQuantifier.getValueMap(onrePatternTree.sentence);
-			String valueStr = map_quantifiers_value.get(fact.getQValue());
+			String valueStr = map_quantifiers_value.get(Double.valueOf(fact.getQValue()));
 			if(valueStr == null) return null; //value not found
 			
 			qValueNode = searchNode_markVisited(onrePatternTree, valueStr, OnreExtractionPartType.QUANTITY);
@@ -310,7 +316,21 @@ public class Onre_dsRunMe {
 		pattern = pattern.replaceAll("#\\{arg\\}#NNP\\|NN\\)", "#{arg}#NNP|NN|PRP)");
 		//System.out.println(pattern);
 		
+		pattern = pattern.replaceFirst("#\\{quantity\\}#NNP\\|NN\\)", "#{quantity}#.+)");
+		pattern = pattern.replaceFirst("#\\{quantity\\}#CD\\)", "#{quantity}#.+)");
+		pattern = pattern.replaceFirst("#\\{quantity\\}#$\\)", "#{quantity}#.+)"); //TODO: not working
+		
+		pattern = OnreUtils_string.lowerTrim(pattern);
+		if(!sanityCheck(pattern)) return null;
+		
 		return pattern;
+	}
+	
+	private static boolean sanityCheck(String pattern) {
+		if(!pattern.contains("{arg}")) return false;
+		if(!pattern.contains("{rel}")) return false;
+		if(!pattern.contains("{quantity}")) return false;
+		return true;
 	}
 	
 	private static void makePattern_helper(OnrePatternNode node, StringBuilder sb_pattern) {
@@ -335,6 +355,11 @@ public class Onre_dsRunMe {
 		while(!myQ.isEmpty()) {
 			OnrePatternNode currNode = myQ.remove();
 			if(currNode.word.equalsIgnoreCase(word)) return currNode;
+			try {
+				if(OnreUtils_number.str2Double(currNode.word).equals(OnreUtils_number.str2Double(word))) return currNode;
+			}catch(Exception e){
+				//ignoring the exception--prob bcauz string can't be converted to a number
+			}
 			
 			List<OnrePatternNode> children = currNode.children;
 			for (OnrePatternNode child : children) {
@@ -342,7 +367,7 @@ public class Onre_dsRunMe {
 			}
 		}
 		
-		System.err.println("---It shall never come here...problem, exiting---");
+		//System.err.println("---It shall never come here...problem, exiting---");
 		//System.exit(1); //TODO: this shall be uncommented..commented due to "\C2" special char issue
 		return null;
 	}
