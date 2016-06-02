@@ -21,6 +21,7 @@ import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
 import edu.iitd.cse.open_nre.onre.constants.Onre_dsRunType;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternNode;
 import edu.iitd.cse.open_nre.onre.domain.OnrePatternTree;
+import edu.iitd.cse.open_nre.onre.domain.Onre_dsDanrothSpans;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_DanrothQuantifier;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
@@ -63,8 +64,9 @@ public class Onre_dsRunMe {
 			System.out.println("-------------------------running file: " + file);
 			
 			List<String> jsonDepTrees = OnreIO.readFile(file+OnreConstants.SUFFIX_JSON_STRINGS);
-			
 			Map<String, Set<Integer>> invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(file+OnreConstants.SUFFIX_INVERTED_INDEX);
+			List<String> jsonDanrothSpans = OnreIO.readFile(file+OnreConstants.SUFFIX_DANROTH_SPANS);
+			List<Onre_dsDanrothSpans> listOfDanrothSpans = getDanrothSpansFromJsonStrings(jsonDanrothSpans);
 			
 			
 			//Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
@@ -83,7 +85,7 @@ public class Onre_dsRunMe {
 					//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
 					OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
 					
-					String pattern = Onre_dsRunMe.makePattern(onrePatternTree, fact);
+					String pattern = Onre_dsRunMe.makePattern(onrePatternTree, fact, listOfDanrothSpans.get(id));
 					if(pattern == null) continue;
 					//System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
 					
@@ -100,6 +102,17 @@ public class Onre_dsRunMe {
 		patternFrequencies=OnreUtils.sortByValue(patternFrequencies);
 		OnreIO.writeFileForMap("data/out_learnedPatterns_"+OnreGlobals.arg_runType.text, patternFrequencies);
 		System.out.println("----Done----");
+	}
+	
+	private static List<Onre_dsDanrothSpans> getDanrothSpansFromJsonStrings(List<String> jsonDanrothSpans) {
+		List<Onre_dsDanrothSpans> listOfDanrothSpans = new ArrayList<>();
+		
+		for (String jsonDanrothSpan : jsonDanrothSpans) {
+			Onre_dsDanrothSpans danrothSpans = (Onre_dsDanrothSpans)OnreHelper_json.getObjectFromJsonString(jsonDanrothSpan, Onre_dsDanrothSpans.class);
+			listOfDanrothSpans.add(danrothSpans);
+		}
+		
+		return listOfDanrothSpans;
 	}
 
 	private static boolean typeFilter(Onre_dsFact fact) {
@@ -219,7 +232,7 @@ public class Onre_dsRunMe {
 		return true;
 	}
 	
-	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
+	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact, Onre_dsDanrothSpans danrothSpans) {
 		if(onrePatternTree == null) return null;
 		
 		OnreUtils_tree.sortPatternTree(onrePatternTree.root);
@@ -228,7 +241,7 @@ public class Onre_dsRunMe {
 		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.getRel(), OnreExtractionPartType.RELATION);
 		if(argNode==null || relNode==null) return null;
 		
-		Map<String, String> map_quantifiers_unit = OnreHelper_DanrothQuantifier.getUnitMap(onrePatternTree.sentence);
+		Map<String, String> map_quantifiers_unit = OnreHelper_DanrothQuantifier.getUnitMap(onrePatternTree.sentence, danrothSpans);
 		String unitInPhrase = map_quantifiers_unit.get(fact.getQUnit());
 		if(unitInPhrase == null) return null;
 		OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, unitInPhrase, OnreExtractionPartType.QUANTITY);
@@ -255,8 +268,15 @@ public class Onre_dsRunMe {
 			break;
 
 		case TYPE3:
-			Map<Double, String> map_quantifiers_value = OnreHelper_DanrothQuantifier.getValueMap(onrePatternTree.sentence);
-			String valueStr = map_quantifiers_value.get(Double.valueOf(fact.getQValue()));
+			Map<Double, String> map_quantifiers_value = OnreHelper_DanrothQuantifier.getValueMap(onrePatternTree.sentence, danrothSpans);
+
+			Double closest = Double.MAX_VALUE;
+			for(double key : map_quantifiers_value.keySet()) {
+				if(Math.abs(fact.getQValue_double()-key)<=OnreConstants.PARTIAL_VALUE_MATCHING_THRESOLD && closest>key) closest=key;
+			}
+			
+			//String valueStr = map_quantifiers_value.get(Double.valueOf(fact.getQValue()));
+			String valueStr = map_quantifiers_value.get(closest);
 			if(valueStr == null) return null; //value not found
 			
 			qValueNode = searchNode_markVisited(onrePatternTree, valueStr, OnreExtractionPartType.QUANTITY);

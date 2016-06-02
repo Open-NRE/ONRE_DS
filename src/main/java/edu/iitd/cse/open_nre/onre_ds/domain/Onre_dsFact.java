@@ -39,6 +39,10 @@ public class Onre_dsFact {
 		return this.words[2];
 	}
 	
+	public double getQValue_double() {
+		return Double.valueOf(this.words[2]);
+	}
+	
 	public String getQUnit() {
 		return this.words[3];
 	}

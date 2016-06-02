@@ -15,11 +15,12 @@ import java.util.TreeSet;
 import opennlp.tools.util.InvalidFormatException;
 import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
 import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
+import edu.iitd.cse.open_nre.onre.domain.Onre_dsDanrothSpans;
+import edu.iitd.cse.open_nre.onre.helper.OnreHelper_DanrothQuantifier;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
-import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
 
 /**
  * @author harinder
@@ -32,13 +33,6 @@ public class SerializeDepTree {
 	 * @throws ClassNotFoundException 
 	 */
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		//String filePath_inputSentences = "/home/harinder/Documents/IITD_MTP/numericSentencesKiKhoj/CluewebSeUmeed/0004wb/0004wb-18.sentences_filtered";
-		/*String filePath_stopWords = "data/stopwords.txt";
-		String filePath_jsonDepTrees = "data/jsonDepTrees";
-		String filePath_invertedIndex = "data/invertedIndex";*/
-		//String filePath_inputSentences = args[0];
-		
-		
 		File folder = new File(args[0]);
 		
 		Set<String> files = new TreeSet<>();
@@ -52,7 +46,8 @@ public class SerializeDepTree {
 			
 			List<String> lines = OnreIO.readFile(file);
 			
-			List<String> jsonStrings = new ArrayList<String>();
+			List<String> jsonStrings_patternTree = new ArrayList<String>();
+			List<String> jsonStrings_danrothSpans = new ArrayList<String>();
 			Map<String, Set<Integer>> invertedIndex = new HashMap<>();
 			
 			for (int i=0; i<lines.size(); i++) {
@@ -60,21 +55,26 @@ public class SerializeDepTree {
 				if(i%1000==0) System.out.println("::" + i);
 				String line = lines.get(i);
 				
-				helper_invertedIndex(stopWords, invertedIndex, i, line);
-				String jsonString = OnreHelper_json.getJsonString(line);//TODO: IMP:uncomment 
-				//if(jsonString!=null) //TODO: this is not required..delete this line later
-					jsonStrings.add(jsonString);//TODO: IMP:uncomment 
-	
-				//onrePatternNode = gson.fromJson(jsonString, OnrePatternNode.class);
-				//System.out.println();
+				//helper_invertedIndex(stopWords, invertedIndex, i, line); //TODO: IMP:uncomment
+				//helper_patternTree(jsonStrings_patternTree, line); //TODO: IMP:uncomment
+				helper_danrothSpans(jsonStrings_danrothSpans, line);
 			}
 			
-			Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);
-			OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);//TODO: IMP:uncomment 
-			
-			//invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(filePath_invertedIndex); 
-			//System.out.println();
+			//Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);//TODO: IMP:uncomment 
+			//OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);//TODO: IMP:uncomment 
+			OnreIO.writeFile(file+OnreConstants.SUFFIX_DANROTH_SPANS, jsonStrings_danrothSpans);//TODO: IMP:uncomment
 		}
+	}
+
+	private static void helper_danrothSpans(List<String> jsonStrings_danrothSpans, String line) {
+		Onre_dsDanrothSpans onre_dsDanrothSpans=OnreHelper_DanrothQuantifier.getQuantitiesDanroth(line);
+		String jsonString_quantSpans=OnreHelper_json.getJsonStringForObject(onre_dsDanrothSpans);
+		jsonStrings_danrothSpans.add(jsonString_quantSpans);
+	}
+
+	private static void helper_patternTree(List<String> jsonStrings_patternTree, String line) {
+		String jsonString_patternTree = OnreHelper_json.getJsonString_patternTree(line); 
+		jsonStrings_patternTree.add(jsonString_patternTree); 
 	}
 
 	private static void helper_invertedIndex(List<String> stopWords,
