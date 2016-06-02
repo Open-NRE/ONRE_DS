@@ -65,9 +65,8 @@ public class Onre_dsRunMe {
 			
 			List<String> jsonDepTrees = OnreIO.readFile(file+OnreConstants.SUFFIX_JSON_STRINGS);
 			Map<String, Set<Integer>> invertedIndex = (HashMap<String, Set<Integer>>)Onre_dsIO.readObjectFromFile(file+OnreConstants.SUFFIX_INVERTED_INDEX);
-			List<String> jsonDanrothSpans = OnreIO.readFile(file+OnreConstants.SUFFIX_DANROTH_SPANS);
-			List<Onre_dsDanrothSpans> listOfDanrothSpans = getDanrothSpansFromJsonStrings(jsonDanrothSpans);
 			
+			List<Onre_dsDanrothSpans> listOfDanrothSpans = OnreHelper_DanrothQuantifier.getListOfDanrothSpans(file);
 			
 			//Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 			for (Onre_dsFact fact : facts) {
@@ -104,17 +103,6 @@ public class Onre_dsRunMe {
 		System.out.println("----Done----");
 	}
 	
-	private static List<Onre_dsDanrothSpans> getDanrothSpansFromJsonStrings(List<String> jsonDanrothSpans) {
-		List<Onre_dsDanrothSpans> listOfDanrothSpans = new ArrayList<>();
-		
-		for (String jsonDanrothSpan : jsonDanrothSpans) {
-			Onre_dsDanrothSpans danrothSpans = (Onre_dsDanrothSpans)OnreHelper_json.getObjectFromJsonString(jsonDanrothSpan, Onre_dsDanrothSpans.class);
-			listOfDanrothSpans.add(danrothSpans);
-		}
-		
-		return listOfDanrothSpans;
-	}
-
 	private static boolean typeFilter(Onre_dsFact fact) {
 		
 		switch (OnreGlobals.arg_runType) {
@@ -272,7 +260,11 @@ public class Onre_dsRunMe {
 
 			Double closest = Double.MAX_VALUE;
 			for(double key : map_quantifiers_value.keySet()) {
-				if(Math.abs(fact.getQValue_double()-key)<=OnreConstants.PARTIAL_VALUE_MATCHING_THRESOLD && closest>key) closest=key;
+				double factQValue = fact.getQValue_double();
+				double threshold = (OnreConstants.PARTIAL_VALUE_MATCHING_THRESOLD_PERCENT * factQValue)/100;
+				double diff_abs_current = Math.abs(factQValue-key);
+				double diff_abs_closest = Math.abs(factQValue-closest);
+				if(diff_abs_current<=threshold && diff_abs_current<diff_abs_closest) closest=key;
 			}
 			
 			//String valueStr = map_quantifiers_value.get(Double.valueOf(fact.getQValue()));
