@@ -6,7 +6,9 @@ package edu.iitd.cse.open_nre.onre_ds.helper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import opennlp.tools.tokenize.Tokenizer;
 import opennlp.tools.tokenize.TokenizerME;
@@ -57,9 +59,10 @@ public class Onre_dsHelper {
 		//TODO: splitting can be better - try to use tokenizing instead - like while getting inverted index
 		
 		List<String> seedfacts = OnreIO.readFile(filePath_seedfacts);
+		Set<String> seedfactsSet = new HashSet<String>(seedfacts);
 		
 		List<Onre_dsFact> facts = new ArrayList<>();
-		for (String seedfact : seedfacts) {
+		for (String seedfact : seedfactsSet) {
 			Onre_dsFact onre_dsFact = new Onre_dsFact();
 			
 			seedfact = seedfact.replaceAll("\\)$", "");
