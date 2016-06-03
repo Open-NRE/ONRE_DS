@@ -44,6 +44,7 @@ public class Onre_dsFact {
 	}
 	
 	public String getQUnit() {
+		if(this.words.length==3) return null; //qUnit not present
 		return this.words[3];
 	}
 }

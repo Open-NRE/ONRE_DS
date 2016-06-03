@@ -76,6 +76,7 @@ public class Onre_dsHelper {
 				onre_dsFact.words[i] = onre_dsFact.words[i].replaceAll("\\,$", "").trim();//TODO: no need of this after tokenizing
 			}
 			
+			if(onre_dsFact.words.length>3 && onre_dsFact.words[3].equalsIgnoreCase("per cent")) onre_dsFact.words[3]="percent";
 			facts.add(onre_dsFact);
 		}
 		
