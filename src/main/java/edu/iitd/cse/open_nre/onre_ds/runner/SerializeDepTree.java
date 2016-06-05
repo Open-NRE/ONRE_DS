@@ -21,6 +21,7 @@ import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
+import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
 
 /**
  * @author harinder
@@ -46,7 +47,7 @@ public class SerializeDepTree {
 			
 			List<String> lines = OnreIO.readFile(file);
 			
-			List<String> jsonStrings_patternTree = new ArrayList<String>();
+			//List<String> jsonStrings_patternTree = new ArrayList<String>();
 			List<String> jsonStrings_danrothSpans = new ArrayList<String>();
 			Map<String, Set<Integer>> invertedIndex = new HashMap<>();
 			
@@ -55,12 +56,12 @@ public class SerializeDepTree {
 				if(i%1000==0) System.out.println("::" + i);
 				String line = lines.get(i);
 				
-				//helper_invertedIndex(stopWords, invertedIndex, i, line); //TODO: IMP:uncomment
+				helper_invertedIndex(stopWords, invertedIndex, i, line); //TODO: IMP:uncomment
 				//helper_patternTree(jsonStrings_patternTree, line); //TODO: IMP:uncomment
 				helper_danrothSpans(jsonStrings_danrothSpans, line);
 			}
 			
-			//Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);//TODO: IMP:uncomment 
+			Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);//TODO: IMP:uncomment 
 			//OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings);//TODO: IMP:uncomment 
 			OnreIO.writeFile(file+OnreConstants.SUFFIX_DANROTH_SPANS, jsonStrings_danrothSpans);//TODO: IMP:uncomment
 		}

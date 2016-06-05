@@ -315,6 +315,9 @@ public class Onre_dsRunMe {
 		String unitInPhrase = map_quantifiers_unit.get(fact.getQUnit());
 		if(unitInPhrase == null) return null;
 		
+		if(unitInPhrase.split(" ").length>1 && OnreGlobals.arg_runType!=Onre_dsRunType.TYPE5) return null; //multipleWord units only allowed in type5 //this shall happen only in case of {percent, per cent}
+		
+		
 		if(unitInPhrase.split(" ").length==1) return searchNode_markVisited(onrePatternTree, unitInPhrase);
 		else return getQUnitNodeForMultiwordUnit(onrePatternTree, fact, danrothSpans, unitInPhrase);
 	}
@@ -405,7 +408,8 @@ public class Onre_dsRunMe {
 		
 		pattern = pattern.replaceFirst("#\\{quantity\\}#NNP\\|NN\\)", "#{quantity}#.+)");
 		pattern = pattern.replaceFirst("#\\{quantity\\}#CD\\)", "#{quantity}#.+)");
-		pattern = pattern.replaceFirst("#\\{quantity\\}#$\\)", "#{quantity}#.+)"); //TODO: not working
+		pattern = pattern.replaceFirst("#\\{quantity\\}#\\$\\)", "#{quantity}#.+)"); //TO-DO: not working
+		pattern = pattern.replaceFirst("#\\{arg\\}#PRP\\$\\)", "#{arg}#PRP\\\\\\$)");
 		
 		pattern = pattern.trim().toLowerCase();
 		if(!sanityCheck(pattern)) return null;
