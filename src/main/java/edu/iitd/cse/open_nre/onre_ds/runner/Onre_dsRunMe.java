@@ -53,7 +53,7 @@ public class Onre_dsRunMe {
 		OnreUtils.listFilesForFolder(folder, files);
 		
 		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
-		List<Onre_dsFact> facts = Onre_dsHelper.readFacts("/home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/out_facts");
+		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(args[2]);
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 		for (String file : files) {
@@ -98,7 +98,7 @@ public class Onre_dsRunMe {
 			}
 		}
 		patternFrequencies=OnreUtils.sortByValue(patternFrequencies);
-		OnreIO.writeFileForMap(getOutFileName(), patternFrequencies);
+		OnreIO.writeFile(getOutFileName(), patternFrequencies);
 		System.out.println("----Done----");
 	}
 
