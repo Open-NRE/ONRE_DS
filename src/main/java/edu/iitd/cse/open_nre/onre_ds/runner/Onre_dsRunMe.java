@@ -40,20 +40,23 @@ import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
 public class Onre_dsRunMe {
 	
 	private static void setArguments(String[] args) {
-		if(args.length>0) OnreGlobals.arg_runType = Onre_dsRunType.getType(args[0]);
+		OnreGlobals.arg_onreds_runType = Onre_dsRunType.getType(args[0]);
+		OnreGlobals.arg_onreds_path_inputFolder = args[1];
+		OnreGlobals.arg_onreds_path_facts = args[2];
+		OnreGlobals.arg_onreds_partialMatchingThresholdPercent = Double.valueOf(args[3]);
 	}
 
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
 		Onre_dsRunMe.setArguments(args);
-
-		File folder = new File(args[1]);
 		
+		File folder = new File(OnreGlobals.arg_onreds_path_inputFolder);
+
 		Set<String> files = new TreeSet<>();
 		OnreUtils.listFilesForFolder(folder, files);
 		
 		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
-		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(args[2]);
+		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(OnreGlobals.arg_onreds_path_facts);
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 		for (String file : files) {
@@ -103,12 +106,12 @@ public class Onre_dsRunMe {
 	}
 
 	private static String getOutFileName() {
-		return "data/out_learnedPatterns_"+OnreGlobals.arg_runType.text+"_"+OnreConstants.PARTIAL_VALUE_MATCHING_THRESOLD_PERCENT+"percent";
+		return "data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent";
 	}
 	
 	private static boolean typeFilter(Onre_dsFact fact) {
 		
-		switch (OnreGlobals.arg_runType) {
+		switch (OnreGlobals.arg_onreds_runType) {
 		case TYPE1:
 			if(!hasUnit(fact)) return false;
 			if(hasMultipleWords(fact)) return false;
@@ -151,6 +154,8 @@ public class Onre_dsRunMe {
 		
 		List<Set<Integer>> listOfSetOfsentenceIds = new ArrayList<Set<Integer>>();
 		
+		//System.out.println(77);
+		
 		for (String factWord : fact.words) {
 			//factWord = factWord.toLowerCase();
 			if(factWord.trim().isEmpty()) continue;
@@ -167,6 +172,7 @@ public class Onre_dsRunMe {
 			listOfSetOfsentenceIds.add(setOfsentenceIds_cloned);
 		}
 		
+		if(listOfSetOfsentenceIds.size()==0) return null;
 		Set<Integer> intersection = listOfSetOfsentenceIds.get(0);
 		for (int i = 1; i < listOfSetOfsentenceIds.size(); i++) {
 			intersection.retainAll(listOfSetOfsentenceIds.get(i));
@@ -178,7 +184,7 @@ public class Onre_dsRunMe {
 	private static boolean typeFilter(Onre_dsFact fact, String factWord) {
 		if(isUnitType(fact, factWord)) return false; //don't match the qUnit
 		
-		switch(OnreGlobals.arg_runType){
+		switch(OnreGlobals.arg_onreds_runType){
 		case TYPE1:
 			if(isValueType(fact, factWord)) return false; //don't match the qValue
 			break;
@@ -243,7 +249,7 @@ public class Onre_dsRunMe {
 		
 		OnrePatternNode qUnitNode=null, qValueNode=null;
 		
-		switch (OnreGlobals.arg_runType) {
+		switch (OnreGlobals.arg_onreds_runType) {
 		case TYPE1:
 			qUnitNode = getQUnitNode(onrePatternTree, fact, danrothSpans);
 			if(qUnitNode == null) return null;
@@ -315,7 +321,7 @@ public class Onre_dsRunMe {
 		String unitInPhrase = map_quantifiers_unit.get(fact.getQUnit());
 		if(unitInPhrase == null) return null;
 		
-		if(unitInPhrase.split(" ").length>1 && OnreGlobals.arg_runType!=Onre_dsRunType.TYPE5) return null; //multipleWord units only allowed in type5 //this shall happen only in case of {percent, per cent}
+		if(unitInPhrase.split(" ").length>1 && OnreGlobals.arg_onreds_runType!=Onre_dsRunType.TYPE5) return null; //multipleWord units only allowed in type5 //this shall happen only in case of {percent, per cent}
 		
 		
 		if(unitInPhrase.split(" ").length==1) return searchNode_markVisited(onrePatternTree, unitInPhrase);
@@ -355,7 +361,7 @@ public class Onre_dsRunMe {
 		Double closest = Double.MAX_VALUE;
 		for(double key : map_quantifiers_value.keySet()) {
 			double factQValue = fact.getQValue_double();
-			double threshold = (OnreConstants.PARTIAL_VALUE_MATCHING_THRESOLD_PERCENT * factQValue)/100;
+			double threshold = (OnreGlobals.arg_onreds_partialMatchingThresholdPercent * factQValue)/100;
 			double diff_abs_current = Math.abs(factQValue-key);
 			double diff_abs_closest = Math.abs(factQValue-closest);
 			if(diff_abs_current<=threshold && diff_abs_current<diff_abs_closest) closest=key;
@@ -367,8 +373,8 @@ public class Onre_dsRunMe {
 		qValueNode = searchNode_markVisited(onrePatternTree, valueStr);
 		
 		if(qValueNode == null) {
-			System.err.println("this shall never happen...exiting"); 
-			System.exit(1);
+			System.err.println("this shall never happen...not exiting - assuming prob in the sentence depGraph"); 
+			//System.exit(1);
 		}
 		
 		return qValueNode;
@@ -404,6 +410,7 @@ public class Onre_dsRunMe {
 		pattern = pattern.replaceAll("\\(prep#for#IN\\)", "(prep#of|for#IN)");
 		
 		pattern = pattern.replaceAll("#\\{arg\\}#NNP\\|NN\\)", "#{arg}#NNP|NN|PRP)");
+		pattern = pattern.replaceAll("#\\{arg\\}#PRP)", "#{arg}#NNP|NN|PRP)");
 		//System.out.println(pattern);
 		
 		pattern = pattern.replaceFirst("#\\{quantity\\}#NNP\\|NN\\)", "#{quantity}#.+)");
