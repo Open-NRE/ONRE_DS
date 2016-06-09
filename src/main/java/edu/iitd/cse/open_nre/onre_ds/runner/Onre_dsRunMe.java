@@ -302,6 +302,7 @@ public class Onre_dsRunMe {
 		if(qUnitNode!=null) qUnitNode.word = "{quantity}";
 		
 		OnrePatternNode LCA = findLCA(onrePatternTree);
+		LCA.dependencyLabel = "";//modifying the dependency label of root in the pattern to be empty
 		StringBuilder sb_pattern = new StringBuilder();
 		sb_pattern.append("<");
 		makePattern_helper(LCA, sb_pattern);
@@ -311,8 +312,7 @@ public class Onre_dsRunMe {
 		return pattern;
 	}
 
-	private static OnrePatternNode getQValueNode_matchAsString(
-			OnrePatternTree onrePatternTree, Onre_dsFact fact) {
+	private static OnrePatternNode getQValueNode_matchAsString(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
 		return searchNode_markVisited(onrePatternTree, fact.getQValue());
 	}
 
