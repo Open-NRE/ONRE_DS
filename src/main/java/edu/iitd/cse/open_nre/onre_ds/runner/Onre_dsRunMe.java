@@ -5,12 +5,9 @@ package edu.iitd.cse.open_nre.onre_ds.runner;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -24,9 +21,9 @@ import edu.iitd.cse.open_nre.onre.domain.Onre_dsDanrothSpan;
 import edu.iitd.cse.open_nre.onre.domain.Onre_dsDanrothSpans;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_DanrothQuantifier;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
+import edu.iitd.cse.open_nre.onre.helper.OnreHelper_pattern;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
-import edu.iitd.cse.open_nre.onre.utils.OnreUtils_number;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils_tree;
 import edu.iitd.cse.open_nre.onre_ds.domain.Onre_dsFact;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
@@ -100,7 +97,7 @@ public class Onre_dsRunMe {
 				//System.out.println(fact);
 			}
 		}
-		patternFrequencies=OnreUtils.sortByValue(patternFrequencies);
+		patternFrequencies=OnreUtils.sortMapByValue(patternFrequencies, true);
 		OnreIO.writeFile(getOutFileName(), patternFrequencies);
 		System.out.println("----Done----");
 	}
@@ -215,14 +212,14 @@ public class Onre_dsRunMe {
 	}
 	
 	private static boolean quantityAndUnitSelection(OnrePatternNode qValueNode, OnrePatternNode qUnitNode) {
-		List<OnrePatternNode> ancestors_qValue = getAncestors(qValueNode);
-		List<OnrePatternNode> ancestors_qUnit = getAncestors(qUnitNode);
-		OnrePatternNode intersectionNode = getIntersectionNode(ancestors_qValue, ancestors_qUnit);
+		List<OnrePatternNode> ancestors_qValue = OnreHelper_pattern.getAncestors(qValueNode);
+		List<OnrePatternNode> ancestors_qUnit = OnreHelper_pattern.getAncestors(qUnitNode);
+		OnrePatternNode intersectionNode = OnreHelper_pattern.getIntersectionNode(ancestors_qValue, ancestors_qUnit);
 		if(intersectionNode == null) return false; //no intersection node - invalid scenario
 		
 		int distance = 0;
-		distance += getDistanceBetweenNodes(intersectionNode, qValueNode);
-		distance += getDistanceBetweenNodes(intersectionNode, qUnitNode);
+		distance += OnreHelper_pattern.getDistanceBetweenNodes(intersectionNode, qValueNode);
+		distance += OnreHelper_pattern.getDistanceBetweenNodes(intersectionNode, qUnitNode);
 		
 		if(distance > OnreConstants.MAX_DISTANCE_QUANTITY_UNIT) return false; //quantity and unit are far away - ignoring pattern
 		
@@ -230,7 +227,7 @@ public class Onre_dsRunMe {
 		//the node with more ancestors will be at lower level and thus shall be unvisited
 		if(ancestors_qUnit.size()>ancestors_qValue.size()) nodeToBeUnvisited = qUnitNode;
 		else nodeToBeUnvisited = qValueNode;
-		markUnvisited(nodeToBeUnvisited);
+		OnreHelper_pattern.markUnvisited(nodeToBeUnvisited);
 		
 		return true;
 	}
@@ -240,8 +237,8 @@ public class Onre_dsRunMe {
 		
 		OnreUtils_tree.sortPatternTree(onrePatternTree.root);
 
-		OnrePatternNode argNode = searchNode_markVisited(onrePatternTree, fact.getArg());
-		OnrePatternNode relNode = searchNode_markVisited(onrePatternTree, fact.getRel());
+		OnrePatternNode argNode = OnreHelper_pattern.searchNode_markVisited(onrePatternTree, fact.getArg());
+		OnrePatternNode relNode = OnreHelper_pattern.searchNode_markVisited(onrePatternTree, fact.getRel());
 		if(argNode==null || relNode==null) return null;
 		
 		//OnrePatternNode qUnitNode = searchNode_markVisited(onrePatternTree, fact.getQUnit(), OnreExtractionPartType.QUANTITY);
@@ -301,7 +298,7 @@ public class Onre_dsRunMe {
 		if(qValueNode!=null) qValueNode.word = "{quantity}";
 		if(qUnitNode!=null) qUnitNode.word = "{quantity}";
 		
-		OnrePatternNode LCA = findLCA(onrePatternTree);
+		OnrePatternNode LCA = OnreHelper_pattern.findLCA(onrePatternTree);
 		LCA.dependencyLabel = "";//modifying the dependency label of root in the pattern to be empty
 		StringBuilder sb_pattern = new StringBuilder();
 		sb_pattern.append("<");
@@ -313,7 +310,7 @@ public class Onre_dsRunMe {
 	}
 
 	private static OnrePatternNode getQValueNode_matchAsString(OnrePatternTree onrePatternTree, Onre_dsFact fact) {
-		return searchNode_markVisited(onrePatternTree, fact.getQValue());
+		return OnreHelper_pattern.searchNode_markVisited(onrePatternTree, fact.getQValue());
 	}
 
 	private static OnrePatternNode getQUnitNode(OnrePatternTree onrePatternTree, Onre_dsFact fact, Onre_dsDanrothSpans danrothSpans) {
@@ -324,7 +321,7 @@ public class Onre_dsRunMe {
 		if(unitInPhrase.split(" ").length>1 && OnreGlobals.arg_onreds_runType!=Onre_dsRunType.TYPE5) return null; //multipleWord units only allowed in type5 //this shall happen only in case of {percent, per cent}
 		
 		
-		if(unitInPhrase.split(" ").length==1) return searchNode_markVisited(onrePatternTree, unitInPhrase);
+		if(unitInPhrase.split(" ").length==1) return OnreHelper_pattern.searchNode_markVisited(onrePatternTree, unitInPhrase);
 		else return getQUnitNodeForMultiwordUnit(onrePatternTree, fact, danrothSpans, unitInPhrase);
 	}
 
@@ -339,7 +336,7 @@ public class Onre_dsRunMe {
 		
 		//finding the qUnitNodes
 		for (String unitPart : unitInPhrase_split) {
-			OnrePatternNode qUnitNode = searchNode(onrePatternTree, unitPart, danrothSpan);
+			OnrePatternNode qUnitNode = OnreHelper_pattern.searchNode(onrePatternTree, unitPart, danrothSpan);
 			if(qUnitNode!=null) qUnitNodes.add(qUnitNode);
 		}
 		
@@ -349,7 +346,7 @@ public class Onre_dsRunMe {
 			if(currQUnitNode.level<topLevel) {topLevel=currQUnitNode.level; highestQUnitNode=currQUnitNode;}
 		}
 		
-		markVisited(highestQUnitNode);
+		OnreHelper_pattern.markVisited(highestQUnitNode);
 		return highestQUnitNode;
 	}
 
@@ -370,7 +367,7 @@ public class Onre_dsRunMe {
 		String valueStr = map_quantifiers_value.get(closest);
 		if(valueStr == null) return null; //value not found
 		
-		qValueNode = searchNode_markVisited(onrePatternTree, valueStr);
+		qValueNode = OnreHelper_pattern.searchNode_markVisited(onrePatternTree, valueStr);
 		
 		if(qValueNode == null) {
 			System.err.println("this shall never happen...not exiting - assuming prob in the sentence depGraph"); 
@@ -441,174 +438,7 @@ public class Onre_dsRunMe {
 			makePattern_helper(child, sb_pattern);
 		}
 		if(node.children!=null && node.children.size()!=0) sb_pattern.append(">");
-		
 	}
 	
-	private static OnrePatternNode searchNode(OnrePatternTree onrePatternTree, String word) {
-		OnrePatternNode root = onrePatternTree.root;
-		
-		Queue<OnrePatternNode> myQ = new LinkedList<>();
-		myQ.add(root);
-		
-		while(!myQ.isEmpty()) {
-			OnrePatternNode currNode = myQ.remove();
-			
-			if(nodeFound(word, currNode)) return currNode;
-			
-			List<OnrePatternNode> children = currNode.children;
-			for (OnrePatternNode child : children) {
-				myQ.add(child);
-			}
-		}
-		
-		//System.err.println("---It shall never come here...problem, exiting---");
-		//System.exit(1); //TODO: this shall be uncommented..commented due to "\C2" special char issue
-		return null;
-	}
-	
-	private static OnrePatternNode searchNode(OnrePatternTree onrePatternTree, String word, Onre_dsDanrothSpan danrothSpan) {
-		OnrePatternNode root = onrePatternTree.root;
-		
-		Queue<OnrePatternNode> myQ = new LinkedList<>();
-		myQ.add(root);
-		myQ.add(null);
-		
-		int level = 0;
-		while(!myQ.isEmpty()) {
-			OnrePatternNode currNode = myQ.remove();
-			if(currNode==null && myQ.isEmpty()) break; 
-			if(currNode==null) {level++; myQ.add(null); continue;}
-			
-			if(nodeFound(word, currNode, danrothSpan)) {currNode.level=level; return currNode;}
-			
-			List<OnrePatternNode> children = currNode.children;
-			for (OnrePatternNode child : children) {
-				myQ.add(child);
-			}
-		}
-		
-		//System.err.println("---It shall never come here...problem, exiting---");
-		//System.exit(1); //TODO: this shall be uncommented..commented due to "\C2" special char issue
-		return null;
-	}
-	
-	private static boolean nodeFound(String word, OnrePatternNode currNode, Onre_dsDanrothSpan danrothSpan) {
-		if(currNode.word.equalsIgnoreCase(word) && currNode.offset>=danrothSpan.start && currNode.offset<=danrothSpan.end) return true;
-		
-		/*//compare as a number
-		try {
-			if(OnreUtils_number.str2Double(currNode.word).equals(OnreUtils_number.str2Double(word))) return true;
-		}catch(Exception e){
-			//ignoring the exception--prob bcauz string can't be converted to a number
-		}*/
-		
-		return false;
-	}
-
-	private static boolean nodeFound(String word, OnrePatternNode currNode) {
-		if(currNode.word.equalsIgnoreCase(word)) return true;
-		
-		//compare as a number
-		try {
-			if(OnreUtils_number.str2Double(currNode.word).equals(OnreUtils_number.str2Double(word))) return true;
-		}catch(Exception e){
-			//ignoring the exception--prob bcauz string can't be converted to a number
-		}
-		
-		return false;
-	}
-	
-	private static void markUnvisited(OnrePatternNode node) {
-		OnrePatternNode temp = node;
-		while(temp!=null) {
-			temp.visitedCount--;
-			temp = temp.parent;
-		}
-	}
-	
-	private static void markVisited(OnrePatternNode node) {
-		OnrePatternNode temp = node;
-		while(temp!=null) {
-			temp.visitedCount++;
-			temp = temp.parent;
-		}
-	}
-	
-	private static int getDistanceBetweenNodes(OnrePatternNode higherLevelNode, OnrePatternNode lowerLevelNode) {
-		int distance = 0;
-		
-		OnrePatternNode temp = lowerLevelNode;
-		while(temp != higherLevelNode) {
-			distance++; 
-			if(temp==null) return Integer.MAX_VALUE; 
-			temp=temp.parent;
-		}
-		
-		return distance;
-	}
-	
-	private static OnrePatternNode getIntersectionNode(List<OnrePatternNode> ancestors_qValue, List<OnrePatternNode> ancestors_qUnit) {
-		int cntr = 0; 
-		OnrePatternNode ancestor_qValue_temp = ancestors_qValue.get(cntr);
-		OnrePatternNode ancestor_qUnit_temp = ancestors_qUnit.get(cntr);
-		
-		if(ancestor_qUnit_temp!=ancestor_qValue_temp) return null;
-		
-		++cntr;
-		
-		OnrePatternNode currentIntersectionNode = null;
-		while(ancestor_qUnit_temp == ancestor_qValue_temp) {
-			currentIntersectionNode = ancestor_qUnit_temp;
-			if(cntr>=ancestors_qValue.size() || cntr>=ancestors_qUnit.size()) break;
-			ancestor_qValue_temp = ancestors_qValue.get(cntr);
-			ancestor_qUnit_temp = ancestors_qUnit.get(cntr);
-			++cntr;
-		}
-		
-		return currentIntersectionNode;
-	}
-	
-	private static List<OnrePatternNode> getAncestors(OnrePatternNode node) {
-		List<OnrePatternNode> ancestors = new ArrayList<>();
-		OnrePatternNode temp = node;
-		while(temp !=null) {
-			ancestors.add(temp);
-			temp = temp.parent;
-		}
-		
-		Collections.reverse(ancestors);
-		return ancestors;
-	}
-	
-	private static OnrePatternNode searchNode_markVisited(OnrePatternTree onrePatternTree, String word) {
-		OnrePatternNode node = searchNode(onrePatternTree, word);
-		if(node==null) return null;
-		
-		markVisited(node);
-		//node.nodeType = partType;
-		return node;
-	}
-	
-	//lowest node with visited count 3(visited by all three factWords)
-	private static OnrePatternNode findLCA(OnrePatternTree onrePatternTree) {
-		OnrePatternNode root = onrePatternTree.root;
-		
-		OnrePatternNode LCA = null;
-		
-		Queue<OnrePatternNode> myQ = new LinkedList<>();
-		myQ.add(root);
-		
-		while(!myQ.isEmpty()) {
-			OnrePatternNode currNode = myQ.remove();
-			if(currNode.visitedCount == 3) LCA = currNode;
-			
-			List<OnrePatternNode> children = currNode.children;
-			for (OnrePatternNode child : children) {
-				myQ.add(child);
-			}
-		}
-		
-		return LCA;
-	}
 }
 
