@@ -378,9 +378,11 @@ public class Onre_dsRunMe {
 	}
 
 	private static String patternPostProcessing(String pattern) {
+		pattern = pattern.trim().toLowerCase();
+		
 		String str_isAndOthers = "#is|are|was|were#";
 		String str_hasAndOthers = "#has|have|had#";
-		String str_noun = "#NNP|NN)";
+		String str_noun = "#nnp|nn)";
 		
 		//System.out.println(pattern);
 		pattern = pattern.replaceAll("<>", "");
@@ -399,23 +401,23 @@ public class Onre_dsRunMe {
 		pattern = pattern.replaceAll("#had#", str_hasAndOthers);
 		//System.out.println(pattern);
 		
-		pattern = pattern.replaceAll("#NNP\\)", str_noun);
-		pattern = pattern.replaceAll("#NN\\)", str_noun);
+		pattern = pattern.replaceAll("#nnp\\)", str_noun);
+		pattern = pattern.replaceAll("#nn\\)", str_noun);
 		//System.out.println(pattern);
 		
-		pattern = pattern.replaceAll("\\(prep#of#IN\\)", "(prep#of|for#IN)");
-		pattern = pattern.replaceAll("\\(prep#for#IN\\)", "(prep#of|for#IN)");
+		pattern = pattern.replaceAll("\\(prep#of#in\\)", "(prep#of|for#in)");
+		pattern = pattern.replaceAll("\\(prep#for#in\\)", "(prep#of|for#in)");
 		
-		pattern = pattern.replaceAll("#\\{arg\\}#NNP\\|NN\\)", "#{arg}#NNP|NN|PRP)");
-		pattern = pattern.replaceAll("#\\{arg\\}#PRP)", "#{arg}#NNP|NN|PRP)");
+		pattern = pattern.replaceAll("#\\{arg\\}#nnp\\|nn\\)", "#{arg}#nnp|nn|prp)");
+		pattern = pattern.replaceAll("#\\{arg\\}#prp\\)", "#{arg}#nnp|nn|prp)");
 		//System.out.println(pattern);
 		
-		pattern = pattern.replaceFirst("#\\{quantity\\}#NNP\\|NN\\)", "#{quantity}#.+)");
-		pattern = pattern.replaceFirst("#\\{quantity\\}#CD\\)", "#{quantity}#.+)");
+		pattern = pattern.replaceFirst("#\\{quantity\\}#nnp\\|nn\\)", "#{quantity}#.+)");
+		pattern = pattern.replaceFirst("#\\{quantity\\}#cd\\)", "#{quantity}#.+)");
 		pattern = pattern.replaceFirst("#\\{quantity\\}#\\$\\)", "#{quantity}#.+)"); //TO-DO: not working
-		pattern = pattern.replaceFirst("#\\{arg\\}#PRP\\$\\)", "#{arg}#PRP\\\\\\$)");
+		pattern = pattern.replaceFirst("#\\{arg\\}#prp\\$\\)", "#{arg}#prp\\\\\\$)");
 		
-		pattern = pattern.trim().toLowerCase();
+		//pattern = pattern.trim().toLowerCase();
 		if(!sanityCheck(pattern)) return null;
 		
 		return pattern;
