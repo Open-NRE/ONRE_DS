@@ -9,8 +9,10 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
+import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
 
 /**
@@ -30,6 +32,7 @@ public class ClassifyMisclassifiedSentences {
 		List<String> lines = OnreIO.readFile(inputFile);
 		Map<Integer, Integer> correctlyClassified = new HashMap<>();
 		Map<Integer, Integer> incorrectlyClassified = new HashMap<>();
+		Map<Integer, Double> precisionMap = new TreeMap<>();
 		
 		int lineCount = 0;
 		
@@ -48,8 +51,43 @@ public class ClassifyMisclassifiedSentences {
 			++lineCount;
 		}
 		
+		buildPrecisionMap(correctlyClassified, incorrectlyClassified, precisionMap);
+		
 		String outputFile = args[1];
-		writeCountsToFile(outputFile, correctlyClassified, incorrectlyClassified);
+		writeCountsToFile(outputFile, correctlyClassified, incorrectlyClassified, precisionMap);
+	}
+	
+	private static void buildPrecisionMap(Map<Integer, Integer> correctlyClassified, Map<Integer, Integer> incorrectlyClassified, 
+			Map<Integer, Double> precisionMap) {
+		
+		for(Integer patternNumber : correctlyClassified.keySet()) {
+			Integer correctCount = correctlyClassified.get(patternNumber);
+			Integer incorrectCount = 0;
+			
+			if(incorrectlyClassified.containsKey(patternNumber)) {
+				incorrectCount = incorrectlyClassified.get(patternNumber);
+			}
+			
+			Double precision = (Double.valueOf(correctCount)/(Double.valueOf(correctCount) + 
+					Double.valueOf(incorrectCount)));
+			
+			precisionMap.put(patternNumber, precision);
+		}
+		
+		for(Integer patternNumber : incorrectlyClassified.keySet()) {
+			if(precisionMap.containsKey(patternNumber)) continue;
+			
+			Integer incorrectCount = incorrectlyClassified.get(patternNumber);
+			Integer correctCount = 0;
+			
+			if(correctlyClassified.containsKey(patternNumber)) {
+				correctCount = correctlyClassified.get(patternNumber);
+			}
+			
+			Double precision = (Double.valueOf(correctCount)/(Double.valueOf(correctCount) + 
+					Double.valueOf(incorrectCount)));
+			precisionMap.put(patternNumber, precision);
+		}
 	}
 	
 	private static void populateMaps(Map<Integer, Integer> correctlyClassified, 
@@ -80,22 +118,34 @@ public class ClassifyMisclassifiedSentences {
 	}
 	
 	private static void writeCountsToFile(String outputFile, Map<Integer, Integer> correctlyClassified, 
-			Map<Integer, Integer> incorrectlyClassified) throws FileNotFoundException {
+			Map<Integer, Integer> incorrectlyClassified, Map<Integer, Double> precisionMap) throws FileNotFoundException {
 		
 		PrintWriter pw = new PrintWriter(outputFile);
 		
-		for(Integer patternNumber : correctlyClassified.keySet()) {
-			Integer correctCount = correctlyClassified.get(patternNumber);
+		Integer cumulativeCorrectCount = 0, cumulativeIncorrectCount = 0;
+		Double cumulativePrecision;
+		
+		for(Integer patternNumber : precisionMap.keySet()) {
+			Integer correctCount = 0;
 			Integer incorrectCount = 0;
 			
 			if(incorrectlyClassified.containsKey(patternNumber)) {
 				incorrectCount = incorrectlyClassified.get(patternNumber);
 			}
 			
-			Double correctRatio = (Double.valueOf(correctCount)/(Double.valueOf(correctCount) + 
-					Double.valueOf(incorrectCount)));
+			if(correctlyClassified.containsKey(patternNumber)) {
+				correctCount = correctlyClassified.get(patternNumber);
+			}
 			
-			pw.println(patternNumber + ";" + correctCount + ";" + incorrectCount + ";" + correctRatio);
+			Double precision = precisionMap.get(patternNumber);
+			
+			cumulativeCorrectCount += correctCount;
+			cumulativeIncorrectCount += incorrectCount;
+			cumulativePrecision = (Double.valueOf(cumulativeCorrectCount)/(Double.valueOf(cumulativeCorrectCount) + 
+					Double.valueOf(cumulativeIncorrectCount)));
+			
+			pw.println(patternNumber + ";" + correctCount + ";" + incorrectCount + ";" + precision
+					+ ";" + cumulativeCorrectCount + ";" + cumulativeIncorrectCount + ";" + cumulativePrecision);
 		}
 		pw.close();
 	}
