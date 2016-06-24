@@ -45,6 +45,8 @@ public class Onre_dsRunMe {
 
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
+		long startTime = System.currentTimeMillis();
+		
 		Onre_dsRunMe.setArguments(args);
 		
 		File folder = new File(OnreGlobals.arg_onreds_path_inputFolder);
@@ -99,6 +101,9 @@ public class Onre_dsRunMe {
 		}
 		patternFrequencies=OnreUtils.sortMapByValue(patternFrequencies, true);
 		OnreIO.writeFile(getOutFileName(), patternFrequencies);
+		long endTime   = System.currentTimeMillis();
+		long totalTime = endTime - startTime;
+		System.out.println("Total time taken in seconds is " + totalTime/1000d);
 		System.out.println("----Done----");
 	}
 
