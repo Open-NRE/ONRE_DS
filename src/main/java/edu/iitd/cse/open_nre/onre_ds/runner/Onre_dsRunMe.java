@@ -55,7 +55,7 @@ public class Onre_dsRunMe {
 		OnreUtils.listFilesForFolder(folder, files);
 		
 		List<String> stopWords = OnreIO.readFile_classPath(OnreFilePaths.filePath_stopWords);
-		List<Onre_dsFact> facts = Onre_dsHelper.readFacts(OnreGlobals.arg_onreds_path_facts);
+		Set<Onre_dsFact> facts = Onre_dsHelper.readFacts(OnreGlobals.arg_onreds_path_facts);
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
 		for (String file : files) {
@@ -86,7 +86,14 @@ public class Onre_dsRunMe {
 					OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
 					
 					String pattern = Onre_dsRunMe.makePattern(onrePatternTree, fact, listOfDanrothSpans.get(id));
+					
 					if(pattern == null) continue;
+					
+					//TODO: ANALYSIS change ---- Start --- uncomment for learning
+					//if(pattern.equalsIgnoreCase("<(#{rel}#verb)<(dobj#{quantity}#.+)<(prep#of|for#in)<(pobj#{arg}#nnp|nn|prp)>>>>"))
+						//pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
+					//TODO: ANALYSIS change ---- End --- uncomment for learning
+					
 					//System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
 					
 					if(patternFrequencies.containsKey(pattern)) {
@@ -100,7 +107,8 @@ public class Onre_dsRunMe {
 			}
 		}
 		patternFrequencies=OnreUtils.sortMapByValue(patternFrequencies, true);
-		OnreIO.writeFile(getOutFileName(), patternFrequencies);
+		OnreIO.writeMap(getOutFileName(), patternFrequencies);
+		
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		System.out.println("Total time taken in seconds is " + totalTime/1000d);

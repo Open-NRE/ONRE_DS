@@ -56,14 +56,14 @@ public class SerializeDepTree {
 				if(i%1000==0) System.out.println("::" + i);
 				String line = lines.get(i);
 				
-				helper_invertedIndex(stopWords, invertedIndex, i, line); //TODO: IMP:uncomment
-				helper_patternTree(jsonStrings_patternTree, line); //TODO: IMP:uncomment
+				helper_invertedIndex(stopWords, invertedIndex, i, line);
+				helper_patternTree(jsonStrings_patternTree, line);
 				helper_danrothSpans(jsonStrings_danrothSpans, line);
 			}
 			
-			Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex);//TODO: IMP:uncomment 
-			OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings_patternTree);//TODO: IMP:uncomment 
-			OnreIO.writeFile(file+OnreConstants.SUFFIX_DANROTH_SPANS, jsonStrings_danrothSpans);//TODO: IMP:uncomment
+			Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex); 
+			OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings_patternTree); 
+			OnreIO.writeFile(file+OnreConstants.SUFFIX_DANROTH_SPANS, jsonStrings_danrothSpans);
 		}
 	}
 

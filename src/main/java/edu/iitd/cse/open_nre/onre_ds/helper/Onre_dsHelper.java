@@ -6,8 +6,10 @@ package edu.iitd.cse.open_nre.onre_ds.helper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import opennlp.tools.tokenize.Tokenizer;
@@ -55,13 +57,22 @@ public class Onre_dsHelper {
 	    return depGraph;
     }*/
 	
-	public static List<Onre_dsFact> readFacts(String filePath_seedfacts) throws IOException {
+	public static Set<Onre_dsFact> readFacts(String filePath_seedfacts) throws IOException {
 		//TODO: splitting can be better - try to use tokenizing instead - like while getting inverted index
 		
 		List<String> seedfacts = OnreIO.readFile(filePath_seedfacts);
-		Set<String> seedfactsSet = new HashSet<String>(seedfacts);
 		
-		List<Onre_dsFact> facts = new ArrayList<>();
+		Map<String, Boolean> myMap = new HashMap<>();
+		for (String fact : seedfacts) {
+			fact = fact.toLowerCase();
+			myMap.put(fact, true);
+		}
+		
+		//Set<String> seedfactsSet = new HashSet<String>();
+		//seedfactsSet.addAll(seedfacts);
+		Set<String> seedfactsSet = myMap.keySet();
+		
+		Set<Onre_dsFact> facts = new HashSet<>();
 		for (String seedfact : seedfactsSet) {
 			Onre_dsFact onre_dsFact = new Onre_dsFact();
 			
