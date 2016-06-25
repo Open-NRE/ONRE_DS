@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/ONRE_DS/src/main/java/edu/iitd/cse/open_nre/onre_ds/runner/Onre_dsRunMe.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.iitd.cse.open_nre.onre_ds.runner.Onre_dsRunMe"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="type5 /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/0000tw /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/Analysis/00_out_facts_old_0000tw 2"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="ONRE_DS"/>
+</launchConfiguration>
