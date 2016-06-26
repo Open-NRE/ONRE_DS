@@ -6,6 +6,7 @@ package edu.iitd.cse.open_nre.onre_ds.runner;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +59,8 @@ public class Onre_dsRunMe {
 		Set<Onre_dsFact> facts = Onre_dsHelper.readFacts(OnreGlobals.arg_onreds_path_facts);
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
+		Map<String, Set<String>> factSentenceMap = new HashMap<>();
+		
 		for (String file : files) {
 			
 			if(!file.endsWith("_filtered")) continue;
@@ -70,6 +73,7 @@ public class Onre_dsRunMe {
 			List<Onre_dsDanrothSpans> listOfDanrothSpans = OnreHelper_DanrothQuantifier.getListOfDanrothSpans(file);
 			
 			//Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
+			
 			for (Onre_dsFact fact : facts) {
 				
 				if(!typeFilter(fact)) continue;
@@ -85,13 +89,12 @@ public class Onre_dsRunMe {
 					//if(jsonDepTree==null || jsonDepTree.equals("null")) continue;
 					OnrePatternTree onrePatternTree = OnreHelper_json.getOnrePatternTree(jsonDepTree);
 					
-					String pattern = Onre_dsRunMe.makePattern(onrePatternTree, fact, listOfDanrothSpans.get(id));
+					String pattern = Onre_dsRunMe.makePattern(onrePatternTree, fact, listOfDanrothSpans.get(id), factSentenceMap);
 					
 					if(pattern == null) continue;
 					
 					//TODO: ANALYSIS change ---- Start --- uncomment for learning
-					//if(pattern.equalsIgnoreCase("<(#{rel}#verb)<(dobj#{quantity}#.+)<(prep#of|for#in)<(pobj#{arg}#nnp|nn|prp)>>>>"))
-						//pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
+						pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
 					//TODO: ANALYSIS change ---- End --- uncomment for learning
 					
 					//System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
@@ -109,6 +112,9 @@ public class Onre_dsRunMe {
 		patternFrequencies=OnreUtils.sortMapByValue(patternFrequencies, true);
 		OnreIO.writeMap(getOutFileName(), patternFrequencies);
 		
+		factSentenceMap = OnreUtils.sortMapByValueCount(factSentenceMap, true);
+		OnreIO.writeMap_valueList(getFactSentenceFileName(), factSentenceMap);
+		
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		System.out.println("Total time taken in seconds is " + totalTime/1000d);
@@ -116,7 +122,11 @@ public class Onre_dsRunMe {
 	}
 
 	private static String getOutFileName() {
-		return "data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent";
+		return "data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_notJustPatterns";
+	}
+	
+	private static String getFactSentenceFileName() {
+		return "data/factSentence_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_notJustPatterns";
 	}
 	
 	private static boolean typeFilter(Onre_dsFact fact) {
@@ -245,7 +255,7 @@ public class Onre_dsRunMe {
 		return true;
 	}
 	
-	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact, Onre_dsDanrothSpans danrothSpans) {
+	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact, Onre_dsDanrothSpans danrothSpans, Map<String, Set<String>> factSentenceMap) {
 		if(onrePatternTree == null) return null;
 		
 		OnreUtils_tree.sortPatternTree(onrePatternTree.root);
@@ -305,6 +315,13 @@ public class Onre_dsRunMe {
 		
 		//need to select one whenever we have both unit and value
 		if(qUnitNode!=null && qValueNode!=null) if(!quantityAndUnitSelection(qValueNode, qUnitNode)) return null; //ignoring pattern
+		
+		//TODO: analysis change --- start---
+		Set<String> listOfSentences = factSentenceMap.get(fact.toString());
+		if(listOfSentences == null) listOfSentences = new HashSet<>();
+		listOfSentences.add(onrePatternTree.sentence);
+		factSentenceMap.put(fact.toString(), listOfSentences);
+		//TODO: analysis change --- end---	
 		
 		argNode.word = "{arg}";
 		relNode.word = "{rel}";
@@ -393,7 +410,8 @@ public class Onre_dsRunMe {
 	private static String patternPostProcessing(String pattern) {
 		pattern = pattern.trim().toLowerCase();
 		
-		String str_isAndOthers = "#is|are|was|were#";
+		//TODO: commented --start-- for now - analysis
+		/*String str_isAndOthers = "#is|are|was|were#";
 		String str_hasAndOthers = "#has|have|had#";
 		String str_noun = "#nnp|nn)";
 		
@@ -423,11 +441,13 @@ public class Onre_dsRunMe {
 		
 		pattern = pattern.replaceAll("#\\{arg\\}#nnp\\|nn\\)", "#{arg}#nnp|nn|prp)");
 		pattern = pattern.replaceAll("#\\{arg\\}#prp\\)", "#{arg}#nnp|nn|prp)");
-		//System.out.println(pattern);
+		//System.out.println(pattern);*/
+		//TODO: commented --end-- for now - analysis
+
 		
 		pattern = pattern.replaceFirst("#\\{quantity\\}#nnp\\|nn\\)", "#{quantity}#.+)");
 		pattern = pattern.replaceFirst("#\\{quantity\\}#cd\\)", "#{quantity}#.+)");
-		pattern = pattern.replaceFirst("#\\{quantity\\}#\\$\\)", "#{quantity}#.+)"); //TO-DO: not working
+		pattern = pattern.replaceFirst("#\\{quantity\\}#\\$\\)", "#{quantity}#.+)"); 
 		pattern = pattern.replaceFirst("#\\{arg\\}#prp\\$\\)", "#{arg}#prp\\\\\\$)");
 		
 		//pattern = pattern.trim().toLowerCase();

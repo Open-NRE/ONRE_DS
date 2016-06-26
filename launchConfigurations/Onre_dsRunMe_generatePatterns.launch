@@ -7,6 +7,6 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.iitd.cse.open_nre.onre_ds.runner.Onre_dsRunMe"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="type5 /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/0000tw /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/Analysis/00_out_facts_old_0000tw 2"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="type2 /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/0000tw /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/Analysis/00_out_facts_old_0000tw 2"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="ONRE_DS"/>
 </launchConfiguration>
