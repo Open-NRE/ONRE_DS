@@ -7,6 +7,6 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.iitd.cse.open_nre.onre_ds.runner.ClassifyMisclassifiedSentences"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="/home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/extractions_0003wb-89_top500_2000sentences/type5_chng_1to14_tagged /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/extractions_0003wb-89_top500_2000sentences/misclassifications"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="/home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/extractions/0003wb-89_#0/type5_chng_1to14_tagged  /home/harinder/Documents/IITD_MTP/Open_nre/ONRE/data/extractions/0003wb-89_#0/type5_chng_1to14_tagged_classified"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="ONRE_DS"/>
 </launchConfiguration>

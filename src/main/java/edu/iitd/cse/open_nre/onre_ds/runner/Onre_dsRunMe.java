@@ -94,7 +94,7 @@ public class Onre_dsRunMe {
 					if(pattern == null) continue;
 					
 					//TODO: ANALYSIS change ---- Start --- uncomment for learning
-						pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
+						//pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
 					//TODO: ANALYSIS change ---- End --- uncomment for learning
 					
 					//System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
@@ -122,11 +122,11 @@ public class Onre_dsRunMe {
 	}
 
 	private static String getOutFileName() {
-		return "data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_notJustPatterns";
+		return "data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_justPatterns_#0";
 	}
 	
 	private static String getFactSentenceFileName() {
-		return "data/factSentence_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_notJustPatterns";
+		return "data/factSentence_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_justPatterns_#0";
 	}
 	
 	private static boolean typeFilter(Onre_dsFact fact) {
@@ -408,12 +408,11 @@ public class Onre_dsRunMe {
 	}
 
 	private static String patternPostProcessing(String pattern) {
-		pattern = pattern.trim().toLowerCase();
+		//TODO: this function is as of now as per facts#0...need to be modified --- IMPORTANT
 		
-		//TODO: commented --start-- for now - analysis
-		/*String str_isAndOthers = "#is|are|was|were#";
+		String str_isAndOthers = "#is|are|was|were#";
 		String str_hasAndOthers = "#has|have|had#";
-		String str_noun = "#nnp|nn)";
+		String str_noun = "#NNP|NN)";
 		
 		//System.out.println(pattern);
 		pattern = pattern.replaceAll("<>", "");
@@ -432,25 +431,23 @@ public class Onre_dsRunMe {
 		pattern = pattern.replaceAll("#had#", str_hasAndOthers);
 		//System.out.println(pattern);
 		
-		pattern = pattern.replaceAll("#nnp\\)", str_noun);
-		pattern = pattern.replaceAll("#nn\\)", str_noun);
+		pattern = pattern.replaceAll("#NNP\\)", str_noun);
+		pattern = pattern.replaceAll("#NN\\)", str_noun);
 		//System.out.println(pattern);
 		
-		pattern = pattern.replaceAll("\\(prep#of#in\\)", "(prep#of|for#in)");
-		pattern = pattern.replaceAll("\\(prep#for#in\\)", "(prep#of|for#in)");
+		pattern = pattern.replaceAll("\\(prep#of#IN\\)", "(prep#of|for#IN)");
+		pattern = pattern.replaceAll("\\(prep#for#IN\\)", "(prep#of|for#IN)");
 		
-		pattern = pattern.replaceAll("#\\{arg\\}#nnp\\|nn\\)", "#{arg}#nnp|nn|prp)");
-		pattern = pattern.replaceAll("#\\{arg\\}#prp\\)", "#{arg}#nnp|nn|prp)");
-		//System.out.println(pattern);*/
-		//TODO: commented --end-- for now - analysis
-
+		pattern = pattern.replaceAll("#\\{arg\\}#NNP\\|NN\\)", "#{arg}#NNP|NN|PRP)");
+		//pattern = pattern.replaceAll("#\\{arg\\}#PRP)", "#{arg}#NNP|NN|PRP)");//TODO: commented for now
+		//System.out.println(pattern);
 		
-		pattern = pattern.replaceFirst("#\\{quantity\\}#nnp\\|nn\\)", "#{quantity}#.+)");
-		pattern = pattern.replaceFirst("#\\{quantity\\}#cd\\)", "#{quantity}#.+)");
-		pattern = pattern.replaceFirst("#\\{quantity\\}#\\$\\)", "#{quantity}#.+)"); 
-		pattern = pattern.replaceFirst("#\\{arg\\}#prp\\$\\)", "#{arg}#prp\\\\\\$)");
+		pattern = pattern.replaceFirst("#\\{quantity\\}#NNP\\|NN\\)", "#{quantity}#.+)");
+		pattern = pattern.replaceFirst("#\\{quantity\\}#CD\\)", "#{quantity}#.+)");
+		pattern = pattern.replaceFirst("#\\{quantity\\}#\\$\\)", "#{quantity}#.+)"); //TO-DO: not working
+		pattern = pattern.replaceFirst("#\\{arg\\}#PRP\\$\\)", "#{arg}#PRP\\\\\\$)");
 		
-		//pattern = pattern.trim().toLowerCase();
+		pattern = pattern.trim().toLowerCase();
 		if(!sanityCheck(pattern)) return null;
 		
 		return pattern;
