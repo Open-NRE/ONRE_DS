@@ -12,11 +12,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.google.gson.Gson;
+
 import opennlp.tools.util.InvalidFormatException;
 import edu.iitd.cse.open_nre.onre.constants.OnreConstants;
 import edu.iitd.cse.open_nre.onre.constants.OnreFilePaths;
 import edu.iitd.cse.open_nre.onre.domain.Onre_dsDanrothSpans;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_DanrothQuantifier;
+import edu.iitd.cse.open_nre.onre.helper.OnreHelper_graph;
 import edu.iitd.cse.open_nre.onre.helper.OnreHelper_json;
 import edu.iitd.cse.open_nre.onre.utils.OnreIO;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
@@ -48,6 +51,7 @@ public class SerializeDepTree {
 			List<String> lines = OnreIO.readFile(file);
 			
 			List<String> jsonStrings_patternTree = new ArrayList<String>();
+			List<String> jsonStrings_posTags = new ArrayList<String>();
 			List<String> jsonStrings_danrothSpans = new ArrayList<String>();
 			Map<String, Set<Integer>> invertedIndex = new HashMap<>();
 			
@@ -59,12 +63,19 @@ public class SerializeDepTree {
 				helper_invertedIndex(stopWords, invertedIndex, i, line);
 				helper_patternTree(jsonStrings_patternTree, line);
 				helper_danrothSpans(jsonStrings_danrothSpans, line);
+				helper_postTags(jsonStrings_posTags, line);
 			}
 			
 			Onre_dsIO.writeObjectToFile(file+OnreConstants.SUFFIX_INVERTED_INDEX, invertedIndex); 
 			OnreIO.writeFile(file+OnreConstants.SUFFIX_JSON_STRINGS, jsonStrings_patternTree); 
 			OnreIO.writeFile(file+OnreConstants.SUFFIX_DANROTH_SPANS, jsonStrings_danrothSpans);
+			OnreIO.writeFile(file+OnreConstants.SUFFIX_POSTAGS, jsonStrings_posTags);
 		}
+	}
+	
+	private static void helper_postTags(List<String> jsonStrings_posTags, String line) {
+		String jsonString_posTag = OnreHelper_json.getJsonString_posTags(line);
+		jsonStrings_posTags.add(jsonString_posTag);
 	}
 
 	private static void helper_danrothSpans(List<String> jsonStrings_danrothSpans, String line) {

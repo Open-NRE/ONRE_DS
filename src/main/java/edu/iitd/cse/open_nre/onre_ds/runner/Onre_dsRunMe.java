@@ -94,7 +94,7 @@ public class Onre_dsRunMe {
 					if(pattern == null) continue;
 					
 					//TODO: ANALYSIS change ---- Start --- uncomment for learning
-						//pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
+						pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
 					//TODO: ANALYSIS change ---- End --- uncomment for learning
 					
 					//System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
@@ -113,7 +113,7 @@ public class Onre_dsRunMe {
 		OnreIO.writeMap(getOutFileName(), patternFrequencies);
 		
 		factSentenceMap = OnreUtils.sortMapByValueCount(factSentenceMap, true);
-		OnreIO.writeMap_valueList(getFactSentenceFileName(), factSentenceMap);
+		//OnreIO.writeMap_valueList(getFactSentenceFileName(), factSentenceMap);
 		
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
@@ -122,11 +122,11 @@ public class Onre_dsRunMe {
 	}
 
 	private static String getOutFileName() {
-		return "data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_justPatterns_#0";
+		return "/home/harinder/Documents/IITD_MTP/Open_nre/ONRE_DS/data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_notJustPatterns_#0";
 	}
 	
 	private static String getFactSentenceFileName() {
-		return "data/factSentence_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_justPatterns_#0";
+		return "/home/harinder/Documents/IITD_MTP/Open_nre/ONRE_DS/data/factSentence_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_JustPatterns_#0";
 	}
 	
 	private static boolean typeFilter(Onre_dsFact fact) {
@@ -178,6 +178,7 @@ public class Onre_dsRunMe {
 		
 		for (String factWord : fact.words) {
 			//factWord = factWord.toLowerCase();
+			if(fact.words[4].equals(factWord)) continue;
 			if(factWord.trim().isEmpty()) continue;
 			if(stopWords.contains(factWord)) continue;
 			
@@ -410,8 +411,8 @@ public class Onre_dsRunMe {
 	private static String patternPostProcessing(String pattern) {
 		//TODO: this function is as of now as per facts#0...need to be modified --- IMPORTANT
 		
-		String str_isAndOthers = "#is|are|was|were#";
-		String str_hasAndOthers = "#has|have|had#";
+		String str_isAndOthers = "#is|are|was|were|been|be#";
+		String str_hasAndOthers = "#has|have|had|having#";
 		String str_noun = "#NNP|NN)";
 		
 		//System.out.println(pattern);
@@ -433,10 +434,11 @@ public class Onre_dsRunMe {
 		
 		pattern = pattern.replaceAll("#NNP\\)", str_noun);
 		pattern = pattern.replaceAll("#NN\\)", str_noun);
+		pattern = pattern.replaceAll("#PRP\\)", str_noun);
 		//System.out.println(pattern);
 		
-		pattern = pattern.replaceAll("\\(prep#of#IN\\)", "(prep#of|for#IN)");
-		pattern = pattern.replaceAll("\\(prep#for#IN\\)", "(prep#of|for#IN)");
+		//pattern = pattern.replaceAll("\\(prep#of#IN\\)", "(prep#of|for#IN)");
+		//pattern = pattern.replaceAll("\\(prep#for#IN\\)", "(prep#of|for#IN)");
 		
 		pattern = pattern.replaceAll("#\\{arg\\}#NNP\\|NN\\)", "#{arg}#NNP|NN|PRP)");
 		//pattern = pattern.replaceAll("#\\{arg\\}#PRP)", "#{arg}#NNP|NN|PRP)");//TODO: commented for now
@@ -457,6 +459,7 @@ public class Onre_dsRunMe {
 		if(!pattern.contains("{arg}")) return false;
 		if(!pattern.contains("{rel}")) return false;
 		if(!pattern.contains("{quantity}")) return false;
+		if(!pattern.contains("{arg}#nnp|nn|prp")) return false; // argument has to be a noun/pronoun
 		return true;
 	}
 	

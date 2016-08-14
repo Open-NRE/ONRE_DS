@@ -14,7 +14,7 @@ public class Onre_dsFact {
 	public String rel;
 	public String q_value;
 	public String q_unit;*/
-	public String[] words = new String[4];
+	public String[] words = new String[5];
 	
 	public String toString() {
 		String temp = "(";
@@ -46,5 +46,9 @@ public class Onre_dsFact {
 	public String getQUnit() {
 		if(this.words.length==3) return null; //qUnit not present
 		return this.words[3];
+	}
+	
+	public String getFullRelation() {
+		return this.words[4];
 	}
 }
