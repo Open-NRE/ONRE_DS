@@ -106,6 +106,18 @@ public class Onre_dsHelper {
 		return sb.toString();
 	}
 	
+	public static void makePattern_helper(OnrePatternNode node, StringBuilder sb_pattern, boolean isPostprocessing) {
+		
+		sb_pattern.append(Onre_dsHelper.getPatternNodeString(node));
+		
+		if(node.children!=null && node.children.size()!=0) sb_pattern.append("<");
+		for(OnrePatternNode child : node.children) {
+			if(!isPostprocessing && child.visitedCount == 0) continue;
+			makePattern_helper(child, sb_pattern, isPostprocessing);
+		}
+		if(node.children!=null && node.children.size()!=0) sb_pattern.append(">");
+	}
+	
 	
 	static Tokenizer tokenizer;
 	public static String[] tokenize(String str) throws InvalidFormatException, IOException {

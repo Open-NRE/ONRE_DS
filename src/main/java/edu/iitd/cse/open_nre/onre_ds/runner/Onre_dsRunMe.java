@@ -4,6 +4,8 @@
 package edu.iitd.cse.open_nre.onre_ds.runner;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +30,12 @@ import edu.iitd.cse.open_nre.onre.utils.OnreUtils;
 import edu.iitd.cse.open_nre.onre.utils.OnreUtils_tree;
 import edu.iitd.cse.open_nre.onre_ds.domain.Onre_dsFact;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelper;
+import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsHelperPatternPostProcessing;
 import edu.iitd.cse.open_nre.onre_ds.helper.Onre_dsIO;
+import edu.mit.jwi.Dictionary;
+import edu.mit.jwi.IDictionary;
+import edu.mit.jwi.item.POS;
+import edu.mit.jwi.morph.WordnetStemmer;
 
 
 /**
@@ -59,7 +66,8 @@ public class Onre_dsRunMe {
 		Set<Onre_dsFact> facts = Onre_dsHelper.readFacts(OnreGlobals.arg_onreds_path_facts);
 		
 		Map<String, Integer> patternFrequencies = new HashMap<String, Integer>();
-		Map<String, Set<String>> factSentenceMap = new HashMap<>();
+		Map<String, Set<String>> factSentenceMap = new HashMap<String, Set<String>>();
+		
 		
 		for (String file : files) {
 			
@@ -94,7 +102,7 @@ public class Onre_dsRunMe {
 					if(pattern == null) continue;
 					
 					//TODO: ANALYSIS change ---- Start --- uncomment for learning
-						pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
+						//pattern += "\n" + fact + "\n" + onrePatternTree.sentence;
 					//TODO: ANALYSIS change ---- End --- uncomment for learning
 					
 					//System.out.println("patternLearned: sentence-"+onrePatternTree.sentence+", fact-"+fact+", pattern-"+pattern);
@@ -113,7 +121,7 @@ public class Onre_dsRunMe {
 		OnreIO.writeMap(getOutFileName(), patternFrequencies);
 		
 		factSentenceMap = OnreUtils.sortMapByValueCount(factSentenceMap, true);
-		//OnreIO.writeMap_valueList(getFactSentenceFileName(), factSentenceMap);
+		OnreIO.writeMap_valueList(getFactSentenceFileName(), factSentenceMap);
 		
 		long endTime   = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
@@ -122,12 +130,14 @@ public class Onre_dsRunMe {
 	}
 
 	private static String getOutFileName() {
-		return "/home/harinder/Documents/IITD_MTP/Open_nre/ONRE_DS/data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_notJustPatterns_#0";
+		return "/home/harinder/Documents/IITD_MTP/Open_nre/ONRE_DS/data/out_learnedPatterns_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_JustPatterns_#0";
 	}
 	
 	private static String getFactSentenceFileName() {
 		return "/home/harinder/Documents/IITD_MTP/Open_nre/ONRE_DS/data/factSentence_"+OnreGlobals.arg_onreds_runType.text+"_"+OnreGlobals.arg_onreds_partialMatchingThresholdPercent+"percent"+"_JustPatterns_#0";
 	}
+	
+	
 	
 	private static boolean typeFilter(Onre_dsFact fact) {
 		
@@ -256,7 +266,7 @@ public class Onre_dsRunMe {
 		return true;
 	}
 	
-	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact, Onre_dsDanrothSpans danrothSpans, Map<String, Set<String>> factSentenceMap) {
+	private static String makePattern(OnrePatternTree onrePatternTree, Onre_dsFact fact, Onre_dsDanrothSpans danrothSpans, Map<String, Set<String>> factSentenceMap) throws IOException {
 		if(onrePatternTree == null) return null;
 		
 		OnreUtils_tree.sortPatternTree(onrePatternTree.root);
@@ -333,10 +343,10 @@ public class Onre_dsRunMe {
 		LCA.dependencyLabel = "";//modifying the dependency label of root in the pattern to be empty
 		StringBuilder sb_pattern = new StringBuilder();
 		sb_pattern.append("<");
-		makePattern_helper(LCA, sb_pattern);
+		Onre_dsHelper.makePattern_helper(LCA, sb_pattern, false);
 		sb_pattern.append(">");
 		String pattern = sb_pattern.toString();
-		pattern = patternPostProcessing(pattern);
+		pattern = Onre_dsHelperPatternPostProcessing.patternPostProcessing(pattern);
 		return pattern;
 	}
 
@@ -406,73 +416,6 @@ public class Onre_dsRunMe {
 		}
 		
 		return qValueNode;
-	}
-
-	private static String patternPostProcessing(String pattern) {
-		//TODO: this function is as of now as per facts#0...need to be modified --- IMPORTANT
-		
-		String str_isAndOthers = "#is|are|was|were|been|be#";
-		String str_hasAndOthers = "#has|have|had|having#";
-		String str_noun = "#NNP|NN)";
-		
-		//System.out.println(pattern);
-		pattern = pattern.replaceAll("<>", "");
-		//System.out.println(pattern);
-		pattern = pattern.replaceAll("null", "");
-		//System.out.println(pattern);
-
-		pattern = pattern.replaceAll("#is#", str_isAndOthers);
-		pattern = pattern.replaceAll("#are#", str_isAndOthers);
-		pattern = pattern.replaceAll("#was#", str_isAndOthers);
-		pattern = pattern.replaceAll("#were#", str_isAndOthers);
-		//System.out.println(pattern);
-		
-		pattern = pattern.replaceAll("#has#", str_hasAndOthers);
-		pattern = pattern.replaceAll("#have#", str_hasAndOthers);
-		pattern = pattern.replaceAll("#had#", str_hasAndOthers);
-		//System.out.println(pattern);
-		
-		pattern = pattern.replaceAll("#NNP\\)", str_noun);
-		pattern = pattern.replaceAll("#NN\\)", str_noun);
-		pattern = pattern.replaceAll("#PRP\\)", str_noun);
-		//System.out.println(pattern);
-		
-		//pattern = pattern.replaceAll("\\(prep#of#IN\\)", "(prep#of|for#IN)");
-		//pattern = pattern.replaceAll("\\(prep#for#IN\\)", "(prep#of|for#IN)");
-		
-		pattern = pattern.replaceAll("#\\{arg\\}#NNP\\|NN\\)", "#{arg}#NNP|NN|PRP)");
-		//pattern = pattern.replaceAll("#\\{arg\\}#PRP)", "#{arg}#NNP|NN|PRP)");//TODO: commented for now
-		//System.out.println(pattern);
-		
-		pattern = pattern.replaceFirst("#\\{quantity\\}#NNP\\|NN\\)", "#{quantity}#.+)");
-		pattern = pattern.replaceFirst("#\\{quantity\\}#CD\\)", "#{quantity}#.+)");
-		pattern = pattern.replaceFirst("#\\{quantity\\}#\\$\\)", "#{quantity}#.+)"); //TO-DO: not working
-		pattern = pattern.replaceFirst("#\\{arg\\}#PRP\\$\\)", "#{arg}#PRP\\\\\\$)");
-		
-		pattern = pattern.trim().toLowerCase();
-		if(!sanityCheck(pattern)) return null;
-		
-		return pattern;
-	}
-	
-	private static boolean sanityCheck(String pattern) {
-		if(!pattern.contains("{arg}")) return false;
-		if(!pattern.contains("{rel}")) return false;
-		if(!pattern.contains("{quantity}")) return false;
-		if(!pattern.contains("{arg}#nnp|nn|prp")) return false; // argument has to be a noun/pronoun
-		return true;
-	}
-	
-	private static void makePattern_helper(OnrePatternNode node, StringBuilder sb_pattern) {
-		
-		sb_pattern.append(Onre_dsHelper.getPatternNodeString(node));
-		
-		if(node.children!=null && node.children.size()!=0) sb_pattern.append("<");
-		for(OnrePatternNode child : node.children) {
-			if(child.visitedCount == 0) continue;
-			makePattern_helper(child, sb_pattern);
-		}
-		if(node.children!=null && node.children.size()!=0) sb_pattern.append(">");
 	}
 	
 }
